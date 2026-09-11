@@ -20,7 +20,34 @@ html,body{margin:0;min-height:100%;font-family:Segoe UI,Arial,sans-serif;backgro
   const stage=document.getElementById('stage');
   const errBox=document.getElementById('error');
   const fail=(e)=>{const msg=e?.message||String(e||'Erro desconhecido');stage.textContent='Não foi possível abrir o painel.';errBox.style.display='block';errBox.textContent=msg+'\n\nAtualize a página. Se persistir, informe esta mensagem.';console.error('[PTCC professor]',e)};
+
+  function loadScript(src,timeout=12000){
+    return new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      const timer=setTimeout(()=>{s.remove();reject(new Error('Tempo excedido ao carregar '+src))},timeout);
+      s.src=src;
+      s.async=true;
+      s.onload=()=>{clearTimeout(timer);resolve()};
+      s.onerror=()=>{clearTimeout(timer);s.remove();reject(new Error('Falha ao carregar '+src))};
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureSupabase(){
+    if(window.supabase)return;
+    const sources=[
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+      'https://unpkg.com/@supabase/supabase-js@2'
+    ];
+    let last;
+    for(const src of sources){
+      try{stage.textContent='Carregando conexão segura...';await loadScript(src);if(window.supabase)return}catch(e){last=e}
+    }
+    throw last||new Error('Não foi possível carregar a biblioteca do Supabase.');
+  }
+
   try{
+    await ensureSupabase();
     stage.textContent='Carregando painel principal...';
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),15000);
@@ -29,9 +56,11 @@ html,body{margin:0;min-height:100%;font-family:Segoe UI,Arial,sans-serif;backgro
     if(!r.ok)throw new Error('Falha HTTP '+r.status+' ao carregar professor-app.html.');
     let html=await r.text();
     if(!html.includes('PTCC — Painel do Professor'))throw new Error('O arquivo professor-app.html retornou conteúdo inesperado.');
-    const primary='<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\\/script>';
-    const fallback='<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\\/script><script>if(!window.supabase){document.write(\'<script src="https://unpkg.com/@supabase/supabase-js@2"><\\\\/script>\')}<\\/script>';
-    html=html.replace(primary,fallback);
+
+    const close='</'+'script>';
+    const supabaseTag='<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">'+close;
+    html=html.split(supabaseTag).join('');
+
     const v=Date.now();
     const modules=[
       'professor-nav.js',
