@@ -1,83 +1,49 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PTCC — Painel do Professor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-html,body{margin:0;min-height:100%;font-family:Segoe UI,Arial,sans-serif;background:#f4f7f8;color:#17313d}
-#loading{max-width:720px;margin:70px auto;padding:28px;border:1px solid #dce5e9;border-radius:16px;background:#fff;box-shadow:0 12px 30px rgba(7,54,74,.10);text-align:center}
-#loading b{display:block;color:#07364a;font-size:1.15rem;margin-bottom:8px}
-#loading small{display:block;color:#6c7d86;line-height:1.45;margin-top:8px}
-#error{display:none;margin-top:16px;padding:12px;border-radius:10px;background:#fff0ef;color:#8b3129;text-align:left;white-space:pre-wrap}
+:root{--navy:#07364a;--navy2:#0b4a61;--gold:#e1aa14;--bg:#f3f6f7;--line:#d8e2e6;--muted:#687b84;--ok:#24744f;--warn:#946400;--bad:#96372f;--info:#2a6380}*{box-sizing:border-box}body{margin:0;font:14px/1.45 Segoe UI,Arial,sans-serif;background:var(--bg);color:#17313d}.wrap{width:min(1180px,calc(100% - 28px));margin:auto}header{background:var(--navy);color:#fff}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:17px 0}.top small{display:block;color:#cfe0e7}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin:18px 0;box-shadow:0 9px 24px rgba(7,54,74,.07)}h2,h3{margin-top:0;color:var(--navy)}.sub{color:var(--muted)}label{font-weight:800;font-size:.78rem}input,select,textarea{width:100%;margin-top:5px;padding:10px;border:1px solid #cbd9df;border-radius:9px;background:#fff;font:inherit}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.btn{border:0;border-radius:9px;padding:10px 13px;background:var(--navy);color:#fff;font-weight:850;cursor:pointer}.btn.alt{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn.ok{background:var(--ok)}.btn.warn{background:var(--warn)}.btn.bad{background:var(--bad)}.btn.info{background:var(--info)}.btn:disabled{opacity:.5;cursor:not-allowed}.hidden{display:none!important}.result{display:none;margin-top:10px;padding:11px;border-radius:9px}.result.ok{display:block;background:#e9f6ef;color:#205b40}.result.err{display:block;background:#fff0ef;color:#8b3129}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tab{border:1px solid var(--line);background:#fff;color:var(--navy);padding:9px 13px;border-radius:9px;font-weight:800;cursor:pointer}.tab.active{background:var(--navy);color:#fff}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px}.card small{display:block;color:var(--muted)}.card b{font-size:1.35rem;color:var(--navy)}.table{overflow:auto;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:960px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:.76rem}th{background:#f5f8f9;color:#52636b;text-transform:uppercase;font-size:.67rem}.chip{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf2f4;font-size:.67rem;font-weight:900}.chip.ok{background:#e6f4ec;color:var(--ok)}.chip.warn{background:#fff0c9;color:var(--warn)}.chip.info{background:#e7f1f6;color:var(--info)}.actions{display:flex;gap:6px;flex-wrap:wrap}.actions .btn{padding:7px 9px;font-size:.7rem}.modal{position:fixed;inset:0;background:rgba(5,30,42,.55);display:grid;place-items:center;padding:18px;z-index:30}.modalbox{width:min(560px,100%);background:#fff;border-radius:15px;padding:20px}.modal textarea{min-height:130px}@media(max-width:760px){.grid,.cards{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
-<div id="loading"><b>Carregando Painel do Professor...</b><span id="stage">Preparando a interface.</span><small>Se algum módulo falhar, a mensagem técnica aparecerá aqui para diagnóstico.</small><div id="error"></div></div>
-<noscript><div style="padding:30px;text-align:center">Este painel precisa de JavaScript habilitado no navegador.</div></noscript>
+<header><div class="wrap top"><div><b>PTCC — Painel do Professor</b><small>Técnico em Marketing • Etec Extensão Ibiúna</small></div><div class="actions"><a class="btn alt" href="./index.html" style="text-decoration:none">Portal do aluno</a><button class="btn alt hidden" id="logoutBtn">Sair</button></div></div></header>
+<main class="wrap">
+<section id="loginPanel" class="panel" style="max-width:440px;margin:45px auto"><h2>Acesso do Professor</h2><p class="sub">Entre com sua conta de professor.</p><form id="loginForm"><label>E-mail<input id="email" type="email" required></label><label>Senha<input id="password" type="password" required></label><button class="btn" style="width:100%;margin-top:14px">Entrar</button><div id="loginResult" class="result"></div></form></section>
+<section id="app" class="hidden">
+<div class="cards" id="stats"></div>
+<div class="panel"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><h2>Administração do PTCC</h2><p class="sub">Termos, grupos, entregas e cronograma em uma única tela.</p></div><button class="btn alt" id="refreshBtn">Atualizar</button></div>
+<div class="tabs"><button class="tab active" data-pane="requests">Solicitações</button><button class="tab" data-pane="groups">Grupos</button><button class="tab" data-pane="submissions">Entregas</button><button class="tab" data-pane="stages">Cronograma</button></div>
+
+<div id="requests" class="pane"><div class="table"><table><thead><tr><th>Protocolo</th><th>Equipe/Tema</th><th>Representantes</th><th>Status</th><th>Documentos</th><th>Ações</th></tr></thead><tbody id="requestsBody"></tbody></table></div></div>
+<div id="groups" class="pane hidden"><div class="table"><table><thead><tr><th>Código</th><th>Grupo</th><th>Tema</th><th>Status</th><th>Progresso</th><th>Integrantes</th></tr></thead><tbody id="groupsBody"></tbody></table></div></div>
+<div id="submissions" class="pane hidden"><div class="table"><table><thead><tr><th>Protocolo</th><th>Grupo</th><th>Etapa</th><th>Versão</th><th>Status</th><th>Arquivo</th><th>Ações</th></tr></thead><tbody id="submissionsBody"></tbody></table></div></div>
+<div id="stages" class="pane hidden"><p class="sub">Defina quando cada etapa será liberada e o prazo final. Se escolher “Professor”, use o botão de liberação manual.</p><div id="stagesList"></div></div>
+</div></section>
+</main>
+<div id="modal" class="modal hidden"><div class="modalbox"><h3 id="modalTitle">Orientação</h3><p class="sub" id="modalSubtitle"></p><textarea id="modalText"></textarea><div class="actions" style="justify-content:flex-end"><button class="btn alt" id="modalCancel">Cancelar</button><button class="btn" id="modalConfirm">Confirmar</button></div></div></div>
 <script>
-(async()=>{
-  const stage=document.getElementById('stage');
-  const errBox=document.getElementById('error');
-  const fail=(e)=>{const msg=e?.message||String(e||'Erro desconhecido');stage.textContent='Não foi possível abrir o painel.';errBox.style.display='block';errBox.textContent=msg+'\n\nAtualize a página. Se persistir, informe esta mensagem.';console.error('[PTCC professor]',e)};
-
-  function loadScript(src,timeout=12000){
-    return new Promise((resolve,reject)=>{
-      const s=document.createElement('script');
-      const timer=setTimeout(()=>{s.remove();reject(new Error('Tempo excedido ao carregar '+src))},timeout);
-      s.src=src;
-      s.async=true;
-      s.onload=()=>{clearTimeout(timer);resolve()};
-      s.onerror=()=>{clearTimeout(timer);s.remove();reject(new Error('Falha ao carregar '+src))};
-      document.head.appendChild(s);
-    });
-  }
-
-  async function ensureSupabase(){
-    if(window.supabase)return;
-    const sources=[
-      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-      'https://unpkg.com/@supabase/supabase-js@2'
-    ];
-    let last;
-    for(const src of sources){
-      try{stage.textContent='Carregando conexão segura...';await loadScript(src);if(window.supabase)return}catch(e){last=e}
-    }
-    throw last||new Error('Não foi possível carregar a biblioteca do Supabase.');
-  }
-
-  try{
-    await ensureSupabase();
-    stage.textContent='Carregando painel principal...';
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),15000);
-    const r=await fetch('./professor-app.html?v='+Date.now(),{cache:'no-store',signal:controller.signal});
-    clearTimeout(timer);
-    if(!r.ok)throw new Error('Falha HTTP '+r.status+' ao carregar professor-app.html.');
-    let html=await r.text();
-    if(!html.includes('PTCC — Painel do Professor'))throw new Error('O arquivo professor-app.html retornou conteúdo inesperado.');
-
-    const close='</'+'script>';
-    const supabaseTag='<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">'+close;
-    html=html.split(supabaseTag).join('');
-
-    const v=Date.now();
-    const modules=[
-      'professor-nav.js',
-      'professor-arquivos.js',
-      'professor-semestre.js',
-      'professor-grupos-ui.js',
-      'professor-etapas.js',
-      'professor-acesso.js'
-    ];
-    const injected=modules.map(f=>'<script src="./'+f+'?v='+v+'"><\\/script>').join('');
-    html=html.replace('</body>',injected+'</body>');
-    stage.textContent='Abrindo painel...';
-    document.open();
-    document.write(html);
-    document.close();
-  }catch(e){fail(e)}
-})();
+const URL='https://klkpkjkvwsojlovguhcf.supabase.co',KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw',BUCKET='ptcc-v2';const sb=supabase.createClient(URL,KEY),$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function show(el,ok,msg){el.className='result '+(ok?'ok':'err');el.textContent=msg}function label(s){return({AWAITING_ORIGINAL:'Aguardando original',AWAITING_SIGNED:'Aguardando assinatura',AWAITING_REVIEW:'Aguardando validação',CHANGES_REQUESTED:'Regularização/Ajustes',APPROVED:'Aprovado',REJECTED:'Rejeitado',NOT_STARTED:'Não iniciada',AVAILABLE:'Disponível',IN_REVIEW:'Em análise'}[s]||s||'—')}function cls(s){return s==='APPROVED'?'ok':s==='AWAITING_REVIEW'||s==='IN_REVIEW'?'warn':'info'}
+let REQUESTS=[],GROUPS=[],MEMBERS=[],STAGES=[],SUBS=[];
+async function verifyProfessor(){const {data:{user}}=await sb.auth.getUser();if(!user)return false;const {data,error}=await sb.from('ptcc_v2_profiles').select('role').eq('id',user.id).maybeSingle();return !error&&data?.role==='professor'}
+$('loginForm').onsubmit=async e=>{e.preventDefault();try{const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;if(!await verifyProfessor()){await sb.auth.signOut();throw new Error('Esta conta não possui permissão de professor.')}await openApp()}catch(err){show($('loginResult'),false,err.message)}};
+$('logoutBtn').onclick=async()=>{await sb.auth.signOut();location.reload()};$('refreshBtn').onclick=loadAll;document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.pane').forEach(x=>x.classList.add('hidden'));$(b.dataset.pane).classList.remove('hidden')});
+async function openApp(){$('loginPanel').classList.add('hidden');$('app').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');await loadAll()}
+async function loadAll(){const [r,g,m,s,sub]=await Promise.all([sb.from('ptcc_v2_requests').select('*').order('created_at',{ascending:false}),sb.from('ptcc_v2_groups').select('*').order('code'),sb.from('ptcc_v2_members').select('*'),sb.from('ptcc_v2_stages').select('*').eq('active',true).order('sort_order'),sb.from('ptcc_v2_submissions').select('*').order('submitted_at',{ascending:false})]);const err=r.error||g.error||m.error||s.error||sub.error;if(err)throw err;REQUESTS=r.data||[];GROUPS=g.data||[];MEMBERS=m.data||[];STAGES=s.data||[];SUBS=sub.data||[];renderStats();renderRequests();renderGroups();renderSubmissions();renderStages()}
+function renderStats(){const pending=REQUESTS.filter(x=>x.status==='AWAITING_REVIEW').length,adjust=REQUESTS.filter(x=>x.status==='CHANGES_REQUESTED').length,inReview=SUBS.filter(x=>x.status==='IN_REVIEW').length;$('stats').innerHTML='<div class="card"><small>Grupos</small><b>'+GROUPS.length+'</b></div><div class="card"><small>Termos para validar</small><b>'+pending+'</b></div><div class="card"><small>Regularizações</small><b>'+adjust+'</b></div><div class="card"><small>Entregas em análise</small><b>'+inReview+'</b></div>'}
+async function openFile(path){if(!path)return alert('Arquivo indisponível.');const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(path,300);if(error||!data?.signedUrl)return alert(error?.message||'Não foi possível abrir o arquivo.');window.open(data.signedUrl,'_blank','noopener')}window.openFile=openFile;
+function renderRequests(){$('requestsBody').innerHTML=REQUESTS.map(r=>{const can=r.status==='AWAITING_REVIEW'&&r.signed_path;const gc=GROUPS.find(g=>g.id===r.group_id)?.code||'';return '<tr><td><b>'+esc(r.protocol)+'</b><br><small>'+new Date(r.created_at).toLocaleString('pt-BR')+'</small></td><td><b>'+esc(r.group_name)+'</b><br>'+esc(r.theme||'—')+'</td><td>'+esc(r.representative_name)+'<br>'+esc(r.vice_name)+'</td><td><span class="chip '+cls(r.status)+'">'+esc(label(r.status))+'</span>'+(r.professor_note?'<br><small>'+esc(r.professor_note)+'</small>':'')+'</td><td><div class="actions">'+(r.original_path?'<button class="btn info" onclick="openFile(\''+esc(r.original_path)+'\')">Original</button>':'')+(r.signed_path?'<button class="btn alt" onclick="openFile(\''+esc(r.signed_path)+'\')">Assinado</button>':'')+'</div></td><td><div class="actions">'+(r.status!=='APPROVED'?'<button class="btn ok" '+(can?'':'disabled')+' onclick="approveRequest(\''+r.id+'\')">Validar</button><button class="btn warn" onclick="requestChanges(\''+r.id+'\',\''+esc(r.protocol)+'\')">Regularização</button>':'<b>'+esc(gc||'APROVADO')+'</b><button class="btn info" onclick="resendAccess(\''+r.id+'\')">Reenviar acesso</button>')+'</div></td></tr>'}).join('')||'<tr><td colspan="6">Nenhuma solicitação.</td></tr>'}
+function renderGroups(){$('groupsBody').innerHTML=GROUPS.map(g=>{const ms=MEMBERS.filter(m=>m.group_id===g.id);return '<tr><td><b>'+esc(g.code)+'</b></td><td>'+esc(g.name)+'</td><td>'+esc(g.theme||'—')+'</td><td><span class="chip ok">'+esc(g.status)+'</span></td><td>'+g.progress+'%</td><td>'+ms.map(m=>'<div><b>'+esc(m.name)+'</b> — '+esc(m.member_role)+'<br><small>'+esc(m.email)+'</small></div>').join('')+'</td></tr>'}).join('')||'<tr><td colspan="6">Nenhum grupo.</td></tr>'}
+function renderSubmissions(){$('submissionsBody').innerHTML=SUBS.map(s=>{const g=GROUPS.find(x=>x.id===s.group_id),st=STAGES.find(x=>x.id===s.stage_id);return '<tr><td><b>'+esc(s.protocol)+'</b><br><small>'+new Date(s.submitted_at).toLocaleString('pt-BR')+'</small></td><td>'+esc(g?.code||'—')+'<br>'+esc(g?.name||'')+'</td><td>'+esc(st?.name||'—')+'</td><td>V'+String(s.version).padStart(2,'0')+'</td><td><span class="chip '+cls(s.status)+'">'+esc(label(s.status))+'</span>'+(s.professor_feedback?'<br><small>'+esc(s.professor_feedback)+'</small>':'')+'</td><td><button class="btn info" onclick="openFile(\''+esc(s.file_path)+'\')">Abrir PDF</button></td><td><div class="actions"><button class="btn ok" '+(s.status==='APPROVED'?'disabled':'')+' onclick="reviewSubmission(\''+s.id+'\',\'APPROVE\',\''+esc(s.protocol)+'\')">Aprovar</button><button class="btn warn" '+(s.status==='APPROVED'?'disabled':'')+' onclick="reviewSubmission(\''+s.id+'\',\'CHANGES\',\''+esc(s.protocol)+'\')">Ajustes</button></div></td></tr>'}).join('')||'<tr><td colspan="7">Nenhuma entrega.</td></tr>'}
+function renderStages(){const host=$('stagesList');host.innerHTML=STAGES.map((s,i)=>'<div class="panel" style="box-shadow:none"><div class="grid"><div><b>'+(i+1)+'. '+esc(s.name)+'</b><div class="sub">'+esc(s.description||'')+'</div></div><label>Liberação<select data-mode="'+s.id+'"><option value="DATE" '+(s.release_mode==='DATE'?'selected':'')+'>Automática pela data</option><option value="PROFESSOR" '+(s.release_mode==='PROFESSOR'?'selected':'')+'>Pelo professor</option></select></label><label>Data de abertura<input type="date" data-open="'+s.id+'" value="'+(s.opens_on||'')+'"></label><label>Prazo final<input type="date" data-due="'+s.id+'" value="'+(s.due_on||'')+'"></label></div><div class="actions"><button class="btn" onclick="saveStage(\''+s.id+'\')">Salvar</button><button class="btn '+(s.manually_released?'warn':'ok')+'" onclick="toggleStage(\''+s.id+'\','+(s.manually_released?'false':'true')+')">'+(s.manually_released?'Bloquear':'Liberar agora')+'</button></div></div>').join('')}
+async function approveRequest(id){if(!confirm('Você conferiu o PDF assinado? Validar a equipe e liberar os acessos por e-mail?'))return;try{const {data,error}=await sb.functions.invoke('aprovar-termo',{body:{request_id:id}});if(error)throw error;if(data?.error)throw new Error(data.error);await loadAll();const f=data.failed?.length||0;alert('Grupo '+(data.group_code||'')+' aprovado. Convites: '+(data.invited?.length||0)+'. Recuperações: '+(data.recovered?.length||0)+(f?'. Falhas: '+f:'.'))}catch(e){alert(e.message||'Falha ao aprovar.')}}window.approveRequest=approveRequest;
+async function resendAccess(id){if(!confirm('Reenviar acesso aos integrantes deste grupo?'))return;try{const {data,error}=await sb.functions.invoke('aprovar-termo',{body:{request_id:id}});if(error)throw error;if(data?.error)throw new Error(data.error);alert('Acessos processados. Convites: '+(data.invited?.length||0)+'. Recuperações: '+(data.recovered?.length||0)+'.')}catch(e){alert(e.message||'Falha ao reenviar.')}}window.resendAccess=resendAccess;
+let modalFn=null;$('modalCancel').onclick=()=>{$('modal').classList.add('hidden');modalFn=null};$('modalConfirm').onclick=async()=>{if(!modalFn)return;try{await modalFn($('modalText').value.trim());$('modal').classList.add('hidden');$('modalText').value='';modalFn=null;await loadAll()}catch(e){alert(e.message)}};function openModal(title,sub,fn){$('modalTitle').textContent=title;$('modalSubtitle').textContent=sub;$('modalText').value='';modalFn=fn;$('modal').classList.remove('hidden')}
+function requestChanges(id,p){openModal('Solicitar regularização',p,async text=>{if(text.length<3)throw new Error('Informe a orientação.');const {error}=await sb.rpc('ptcc_v2_request_changes',{p_request:id,p_note:text});if(error)throw error})}window.requestChanges=requestChanges;
+function reviewSubmission(id,action,p){openModal(action==='APPROVE'?'Aprovar entrega':'Solicitar ajustes',p,async text=>{if(action==='CHANGES'&&text.length<3)throw new Error('Informe a orientação.');const {error}=await sb.rpc('ptcc_v2_review_submission',{p_submission:id,p_action:action,p_feedback:text||null});if(error)throw error})}window.reviewSubmission=reviewSubmission;
+async function saveStage(id,releasedOverride){const mode=document.querySelector('[data-mode="'+id+'"]')?.value,open=document.querySelector('[data-open="'+id+'"]')?.value||null,due=document.querySelector('[data-due="'+id+'"]')?.value||null,st=STAGES.find(x=>x.id===id),released=releasedOverride??st?.manually_released??false;const {error}=await sb.rpc('ptcc_v2_update_stage',{p_stage:id,p_opens:open,p_due:due,p_mode:mode,p_released:released});if(error)return alert(error.message);await loadAll()}window.saveStage=saveStage;window.toggleStage=(id,state)=>saveStage(id,state);
+(async()=>{const {data}=await sb.auth.getSession();if(data.session&&await verifyProfessor())openApp().catch(e=>show($('loginResult'),false,e.message))})();
 </script>
-</body>
-</html>
+</body></html>
