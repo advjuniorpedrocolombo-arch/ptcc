@@ -1,4 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PTCC — Painel do Professor</title><style>html,body{margin:0;min-height:100%;font-family:Segoe UI,Arial,sans-serif;background:#f4f7f8;color:#17313d}#loading{padding:40px;text-align:center;font-weight:700}</style></head>
-<body><div id="loading">Carregando Painel do Professor...</div><script>(async()=>{try{const r=await fetch('./professor-app.html?v=20260911-1628',{cache:'no-store'});if(!r.ok)throw new Error('Não foi possível carregar o painel.');let html=await r.text();if(!html.includes('data-tab="cronograma"')){html=html.replace('<div class="tabs">','<div class="tabs"><button class="btn" data-tab="cronograma">Cronograma</button>');html=html.replace('<div id="solicitacoes" class="tabpane">','<div id="cronograma" class="tabpane hidden"><div class="schedule-grid" id="scheduleGrid"><div class="empty">Carregando cronograma...</div></div></div><div id="solicitacoes" class="tabpane">');}html=html.replace('</body>','<script src="./professor-etapas.js?v=20260911-1628"><\\/script></body>');document.open();document.write(html);document.close()}catch(e){document.getElementById('loading').textContent='Erro ao carregar o Painel do Professor: '+e.message}})();</script></body></html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PTCC — Painel do Professor</title>
+<style>
+:root{--navy:#07364a;--paper:#f4f7f8;--line:#dce5e9;--gold:#e1aa14}*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Segoe UI,Arial,sans-serif;background:var(--paper)}body{display:flex;flex-direction:column}.bar{background:var(--navy);padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bar b{color:#fff;margin-right:10px}.bar button{border:1px solid rgba(255,255,255,.28);background:#fff;color:var(--navy);padding:8px 12px;border-radius:8px;font-weight:800;cursor:pointer}.bar button.active{background:var(--gold);border-color:var(--gold);color:#17313d}.frame{width:100%;flex:1;border:0;background:var(--paper)}
+</style>
+</head>
+<body>
+<div class="bar"><b>PTCC — Área do Professor</b><button id="btnPainel" class="active">Painel principal</button><button id="btnCronograma">Cronograma e datas</button></div>
+<iframe id="frame" class="frame" src="./professor-app.html?v=20260911-1630" title="Painel do Professor"></iframe>
+<script>
+const frame=document.getElementById('frame'),bp=document.getElementById('btnPainel'),bc=document.getElementById('btnCronograma');
+function go(page,btn){frame.src=page+'?v='+Date.now();[bp,bc].forEach(x=>x.classList.remove('active'));btn.classList.add('active')}
+bp.onclick=()=>go('./professor-app.html',bp);bc.onclick=()=>go('./professor-cronograma.html',bc);
+</script>
+</body></html>
