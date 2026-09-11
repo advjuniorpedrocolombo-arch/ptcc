@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="pragma" content="no-cache">
-  <meta http-equiv="expires" content="0">
-  <title>PTCC — Painel do Professor</title>
-  <script>
-    window.location.replace('./professor-app.html?v=' + Date.now());
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="expires" content="0">
+<title>PTCC — Painel do Professor</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#f4f7f8;font-family:Segoe UI,Arial,sans-serif}
+iframe{border:0;width:100%;height:100vh;display:block;background:#f4f7f8}
+.fallback{position:fixed;right:12px;bottom:12px;z-index:10;background:#07364a;color:#fff;text-decoration:none;padding:9px 12px;border-radius:9px;font-size:12px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+</style>
 </head>
-<body style="font-family:Segoe UI,Arial,sans-serif;background:#f4f7f8;color:#17313d;text-align:center;padding:40px">
-  Abrindo Painel do Professor...
-  <p><a href="./professor-app.html">Clique aqui se o painel não abrir automaticamente.</a></p>
+<body>
+<iframe src="./professor-app.html" title="PTCC — Painel do Professor" allow="clipboard-read; clipboard-write"></iframe>
+<a class="fallback" href="./professor-app.html" target="_top">Abrir painel diretamente</a>
 </body>
 </html>
