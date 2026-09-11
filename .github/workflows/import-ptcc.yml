@@ -1,0 +1,40 @@
+name: Importar PTCC
+
+on:
+  push:
+    paths:
+      - '.github/workflows/import-ptcc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório de destino
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Baixar conteúdo original do PTCC
+        run: |
+          git clone --depth 1 https://github.com/advjuniorpedrocolombo-arch/3-TANE-IBIUNA.git /tmp/origem
+          cp -a /tmp/origem/ptcc/. ./
+          rm -rf /tmp/origem
+
+      - name: Remover workflow de importação após a cópia
+        run: rm -f .github/workflows/import-ptcc.yml
+
+      - name: Registrar conteúdo importado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração necessária."
+          else
+            git commit -m "Importar estrutura completa do PTCC"
+            git push origin HEAD:main
+          fi
