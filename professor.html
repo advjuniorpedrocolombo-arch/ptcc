@@ -1,4 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>PTCC — Área do Professor</title><style>html,body{margin:0;min-height:100%;font-family:Segoe UI,Arial,sans-serif;background:#f4f7f8;color:#17313d}#loading{padding:40px;text-align:center;font-weight:700}</style></head>
-<body><div id="loading">Carregando Área do Professor...</div><script>(async()=>{try{const r=await fetch('./professor-app.html?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('Não foi possível carregar o painel.');let html=await r.text();const stamp=Date.now();const extra=`<script src="./professor-arquivos.js?v=${stamp}"><\/script><script src="./professor-semestre.js?v=${stamp}"><\/script><script src="./professor-grupos.js?v=${stamp}"><\/script><script src="./professor-nav.js?v=${stamp}"><\/script>`;html=html.replace('</body>',extra+'</body>');document.open();document.write(html);document.close()}catch(e){document.getElementById('loading').textContent='Erro ao carregar a Área do Professor: '+e.message}})();</script></body></html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="0">
+  <title>PTCC — Painel do Professor</title>
+  <script>
+    window.location.replace('./professor-app.html?v=' + Date.now());
+  </script>
+</head>
+<body style="font-family:Segoe UI,Arial,sans-serif;background:#f4f7f8;color:#17313d;text-align:center;padding:40px">
+  Abrindo Painel do Professor...
+  <p><a href="./professor-app.html">Clique aqui se o painel não abrir automaticamente.</a></p>
+</body>
+</html>
