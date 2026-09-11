@@ -9,10 +9,21 @@
 </head>
 <body>
 <div class="bar"><b>PTCC — Área do Professor</b><button id="btnPainel" class="active">Painel principal</button><button id="btnCronograma">Cronograma e datas</button></div>
-<iframe id="frame" class="frame" src="./professor-app.html?v=20260911-1630" title="Painel do Professor"></iframe>
+<iframe id="frame" class="frame" src="./professor-app.html?v=20260911-1735" title="Painel do Professor"></iframe>
 <script>
 const frame=document.getElementById('frame'),bp=document.getElementById('btnPainel'),bc=document.getElementById('btnCronograma');
 function go(page,btn){frame.src=page+'?v='+Date.now();[bp,bc].forEach(x=>x.classList.remove('active'));btn.classList.add('active')}
 bp.onclick=()=>go('./professor-app.html',bp);bc.onclick=()=>go('./professor-cronograma.html',bc);
+frame.addEventListener('load',()=>{
+  try{
+    const doc=frame.contentDocument;
+    if(!doc||!frame.contentWindow.location.pathname.endsWith('/professor-app.html')) return;
+    if(doc.getElementById('professorArquivosScript')) return;
+    const s=doc.createElement('script');
+    s.id='professorArquivosScript';
+    s.src='./professor-arquivos.js?v=20260911-1735';
+    doc.body.appendChild(s);
+  }catch(e){console.error('Não foi possível ativar os arquivos das entregas:',e)}
+});
 </script>
 </body></html>
