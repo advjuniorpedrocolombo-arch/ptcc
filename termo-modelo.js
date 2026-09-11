@@ -43,38 +43,68 @@
     }
     function newPage(){ doc.addPage(); y=16; pageNo(); }
     function ensure(h){ if(y+h>H-18) newPage(); }
+
+    function drawJustifiedLine(text,xPos,yPos,width){
+      const words=String(text||'').trim().split(/\s+/).filter(Boolean);
+      if(words.length<=1){ doc.text(words[0]||'',xPos,yPos); return; }
+      const totalWords=words.reduce((s,w)=>s+doc.getTextWidth(w),0);
+      const gap=(width-totalWords)/(words.length-1);
+      let x=xPos;
+      words.forEach((w,i)=>{
+        doc.text(w,x,yPos);
+        x+=doc.getTextWidth(w)+(i<words.length-1?gap:0);
+      });
+    }
+
     function paragraph(text, opts={}){
       const size=opts.size||9.3, leading=opts.leading||4.25;
       doc.setFont('helvetica',opts.bold?'bold':'normal');
       doc.setFontSize(size);
       const lines=doc.splitTextToSize(text,CW);
       ensure(lines.length*leading+2);
-      doc.text(lines,L,y,{lineHeightFactor:1.12});
-      y+=lines.length*leading+(opts.after??2.5);
+      lines.forEach((line,i)=>{
+        if(i<lines.length-1 && String(line).trim().split(/\s+/).length>1) drawJustifiedLine(line,L,y,CW);
+        else doc.text(line,L,y);
+        y+=leading;
+      });
+      y+=(opts.after??2.5);
     }
+
     function clause(title, body){
-      const whole=`${title} – ${body}`;
-      const lines=doc.splitTextToSize(whole,CW);
-      ensure(lines.length*4.15+2);
       doc.setFontSize(9.25);
+      const leading=4.15;
       doc.setFont('helvetica','bold');
-      doc.text(title+' –',L,y);
-      const titleW=doc.getTextWidth(title+' – ');
+      const titleText=title+' – ';
+      const titleW=doc.getTextWidth(titleText);
       doc.setFont('helvetica','normal');
       const firstAvail=CW-titleW;
-      const bodyLines=doc.splitTextToSize(body,CW);
-      if(firstAvail>35){
-        const words=body.split(/\s+/); let first='',restWords=[];
+      const words=String(body||'').split(/\s+/);
+      let first='',cut=0;
+      if(firstAvail>25){
         for(let i=0;i<words.length;i++){
           const t=(first?first+' ':'')+words[i];
-          if(doc.getTextWidth(t)<=firstAvail) first=t; else {restWords=words.slice(i);break;}
+          if(doc.getTextWidth(t)<=firstAvail){first=t;cut=i+1;}else break;
         }
-        doc.text(first,L+titleW,y);
-        y+=4.15;
-        if(restWords.length){const rest=doc.splitTextToSize(restWords.join(' '),CW);doc.text(rest,L,y,{lineHeightFactor:1.12});y+=rest.length*4.15;}
-      }else{
-        y+=4.15; doc.text(bodyLines,L,y,{lineHeightFactor:1.12}); y+=bodyLines.length*4.15;
       }
+      const restText=words.slice(cut).join(' ');
+      const restLines=restText?doc.splitTextToSize(restText,CW):[];
+      ensure((1+restLines.length)*leading+2);
+
+      doc.setFont('helvetica','bold');
+      doc.text(titleText,L,y);
+      if(first){
+        doc.setFont('helvetica','normal');
+        if(cut<words.length && first.trim().split(/\s+/).length>1) drawJustifiedLine(first,L+titleW,y,firstAvail);
+        else doc.text(first,L+titleW,y);
+      }
+      y+=leading;
+
+      doc.setFont('helvetica','normal');
+      restLines.forEach((line,i)=>{
+        if(i<restLines.length-1 && String(line).trim().split(/\s+/).length>1) drawJustifiedLine(line,L,y,CW);
+        else doc.text(line,L,y);
+        y+=leading;
+      });
       y+=2.1;
     }
 
