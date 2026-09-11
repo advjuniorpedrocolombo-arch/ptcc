@@ -1,5 +1,18 @@
 (function(){
-  if(typeof sb==='undefined') return;
+  if(typeof sb==='undefined'){
+    console.error('[PTCC] Cliente Supabase não foi carregado.');
+    return;
+  }
+
+  const renderStatsOriginal=window.renderStats;
+  window.renderStats=function(s,g,e){
+    if(typeof renderStatsOriginal==='function') renderStatsOriginal(s,g,e);
+    const stats=document.getElementById('stats');
+    if(!stats)return;
+    const pend=(s||[]).filter(x=>x.status==='AGUARDANDO VALIDAÇÃO').length;
+    const ass=(s||[]).filter(x=>x.status==='AGUARDANDO ENVIO DO TERMO ASSINADO').length;
+    stats.innerHTML=`<div class="stat"><small>Grupos</small><b>${(g||[]).length}</b></div><div class="stat"><small>Termos para validar</small><b>${pend}</b></div><div class="stat"><small>Aguardando assinatura</small><b>${ass}</b></div><div class="stat"><small>Entregas</small><b>${(e||[]).length}</b></div>`;
+  };
 
   async function executarAcessos(id, confirmarValidacao){
     if(confirmarValidacao && !confirm('Você conferiu o PDF assinado? Validar este Termo, criar o grupo e liberar os acessos por e-mail?')) return;
@@ -11,7 +24,7 @@
 
       const convites=data?.convites_enviados?.length||0;
       const recuperacoes=data?.recuperacoes_enviadas?.length||0;
-      const falhas=data?.falhas||[];
+      const falhas=Array.isArray(data?.falhas)?data.falhas:[];
       let msg=`Grupo ${data?.codigo||''} processado com sucesso.\n\n`+
               `Convites de primeiro acesso enviados: ${convites}.\n`+
               `E-mails para definir/redefinir a senha enviados: ${recuperacoes}.`;
@@ -22,6 +35,7 @@
       }
       alert(msg);
     }catch(e){
+      console.error('[PTCC] Falha ao liberar acessos',e);
       alert(e?.message||'Não foi possível liberar os acessos.');
     }
   }
@@ -41,7 +55,7 @@
     const body=document.getElementById('solBody');
     if(!body) return;
     [...body.querySelectorAll('tr')].forEach((tr,i)=>{
-      const x=rows[i];
+      const x=rows?.[i];
       if(!x || x.status!=='APROVADA') return;
       const td=tr.lastElementChild;
       if(!td) return;
