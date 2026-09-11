@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTCC — Recuperar senha do professor</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#07364a;--bg:#f3f6f7;--line:#d8e2e6;--muted:#687b84;--ok:#24744f;--bad:#96372f}*{box-sizing:border-box}body{margin:0;font:15px/1.5 Segoe UI,Arial,sans-serif;background:var(--bg);color:#17313d}.wrap{width:min(460px,calc(100% - 28px));margin:60px auto}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 9px 24px rgba(7,54,74,.08)}h1{font-size:1.35rem;color:var(--navy);margin-top:0}.sub{color:var(--muted)}label{display:block;font-weight:800;margin-top:12px}input{width:100%;margin-top:5px;padding:11px;border:1px solid #cbd9df;border-radius:9px;font:inherit}.btn{width:100%;border:0;border-radius:9px;padding:11px 13px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer;margin-top:14px}.link{display:block;text-align:center;margin-top:14px;color:var(--navy)}.msg{display:none;margin-top:12px;padding:11px;border-radius:9px}.msg.ok{display:block;background:#e9f6ef;color:var(--ok)}.msg.err{display:block;background:#fff0ef;color:var(--bad)}.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="panel">
+<h1>Recuperar senha do professor</h1>
+<p class="sub">Use a conta de professor já cadastrada. Não crie outra conta.</p>
+<div id="requestBox">
+<label>E-mail<input id="email" type="email" value="juniorpedrocolombo@gmail.com" autocomplete="email"></label>
+<button class="btn" id="sendBtn">Enviar link de redefinição</button>
+</div>
+<div id="updateBox" class="hidden">
+<p class="sub">Defina sua nova senha.</p>
+<label>Nova senha<input id="pass1" type="password" minlength="8" autocomplete="new-password"></label>
+<label>Confirmar nova senha<input id="pass2" type="password" minlength="8" autocomplete="new-password"></label>
+<button class="btn" id="saveBtn">Salvar nova senha</button>
+</div>
+<div id="msg" class="msg"></div>
+<a class="link" href="./professor.html">Voltar ao Painel do Professor</a>
+</div></div>
+<script>
+const URL='https://klkpkjkvwsojlovguhcf.supabase.co';
+const KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw';
+const sb=supabase.createClient(URL,KEY);
+const $=id=>document.getElementById(id);
+function msg(ok,text){const e=$('msg');e.className='msg '+(ok?'ok':'err');e.textContent=text}
+$('sendBtn').onclick=async()=>{const email=$('email').value.trim();if(!email)return msg(false,'Informe o e-mail.');const redirectTo=new URL('./recuperar-professor.html',location.href).href;const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});if(error)return msg(false,error.message);msg(true,'Link enviado. Abra o e-mail recebido e clique em redefinir senha.')};
+async function recoveryMode(){const hash=location.hash||'';const qs=new URLSearchParams(location.search);const hasRecovery=hash.includes('type=recovery')||qs.get('code');const {data}=await sb.auth.getSession();if(hasRecovery||data.session){$('requestBox').classList.add('hidden');$('updateBox').classList.remove('hidden');msg(true,'Link reconhecido. Defina uma nova senha abaixo.')}}
+$('saveBtn').onclick=async()=>{const a=$('pass1').value,b=$('pass2').value;if(a.length<8)return msg(false,'Use pelo menos 8 caracteres.');if(a!==b)return msg(false,'As senhas não coincidem.');const {error}=await sb.auth.updateUser({password:a});if(error)return msg(false,error.message);msg(true,'Senha alterada com sucesso. Agora volte ao Painel do Professor e entre com a nova senha.');setTimeout(()=>{location.href='./professor.html'},1800)};
+sb.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY'){$('requestBox').classList.add('hidden');$('updateBox').classList.remove('hidden');msg(true,'Defina sua nova senha.')}});
+recoveryMode();
+</script>
+</body>
+</html>
