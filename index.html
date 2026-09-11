@@ -14,7 +14,46 @@
     const r=await fetch('./app.html?ts='+Date.now(),{cache:'no-store'});
     if(!r.ok)throw new Error('Não foi possível carregar a plataforma.');
     let html=await r.text();
-    html=html.replace('</body>','<script src="./termo-modelo.js?ts='+Date.now()+'"><\\/script></body>');
+    const patch=`
+<script src="./termo-modelo.js?ts=${Date.now()}"><\/script>
+<script>
+(function(){
+  const form=document.getElementById('termCreateForm');
+  if(!form)return;
+  form.onsubmit=async function(e){
+    e.preventDefault();
+    const btn=document.getElementById('termCreateBtn'),out=document.getElementById('termCreateResult');
+    let path='';
+    try{
+      btn.disabled=true;btn.textContent='Gerando Termo...';
+      const integrantes=[...document.querySelectorAll('.member-row')].map(r=>({nome:r.querySelector('.mName').value.trim(),email:r.querySelector('.mEmail').value.trim()})).filter(x=>x.nome&&x.email);
+      const d={nomeGrupo:document.getElementById('termNomeGrupo').value.trim(),tema:document.getElementById('termTema').value.trim(),rep:document.getElementById('termRep').value.trim(),emailRep:document.getElementById('termEmailRep').value.trim(),vice:document.getElementById('termVice').value.trim(),emailVice:document.getElementById('termEmailVice').value.trim(),integrantes};
+      const {data,error}=await sb.rpc('iniciar_termo',{p_nome_grupo:d.nomeGrupo,p_tema:d.tema,p_representante:d.rep,p_email_representante:d.emailRep,p_vice_representante:d.vice,p_email_vice:d.emailVice,p_integrantes:integrantes});
+      if(error)throw error;
+      const protocolo=data?.[0]?.protocolo;
+      if(!protocolo)throw new Error('Não foi possível gerar o protocolo.');
+      if(typeof window.buildTermPdf!=='function')throw new Error('Modelo oficial do Termo não foi carregado.');
+      const doc=window.buildTermPdf(d,protocolo);
+      const blob=doc.output('blob');
+      path='termos-originais/2026/'+protocolo+'.pdf';
+      const up=await sb.storage.from('ptcc-arquivos').upload(path,blob,{contentType:'application/pdf',upsert:false});
+      if(up.error)throw up.error;
+      const a=await sb.rpc('anexar_termo_original',{p_protocolo:protocolo,p_email:d.emailRep,p_caminho:path});
+      if(a.error)throw a.error;
+      doc.save(protocolo+'.pdf');
+      document.getElementById('signedProtocol').value=protocolo;
+      document.getElementById('signedEmail').value=d.emailRep;
+      show(out,true,'<b>Termo gerado com sucesso.</b><div class="protocol-box">'+esc(protocolo)+'</div>O PDF oficial com todas as cláusulas foi baixado. Imprima, colha as assinaturas e depois envie o documento assinado no formulário abaixo.');
+    }catch(err){
+      if(path)await sb.storage.from('ptcc-arquivos').remove([path]).catch(()=>{});
+      show(out,false,esc(err.message||'Não foi possível gerar o Termo.'));
+    }finally{
+      btn.disabled=false;btn.textContent='Gerar Termo de Compromisso';
+    }
+  };
+})();
+<\/script>`;
+    html=html.replace('</body>',patch+'</body>');
     document.open();
     document.write(html);
     document.close();
