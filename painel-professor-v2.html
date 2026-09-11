@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PTCC — Painel do Professor V2</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--navy:#07364a;--line:#d8e2e6;--bg:#f3f6f7;--muted:#687b84;--ok:#24744f;--warn:#946400;--bad:#96372f;--info:#2a6380}*{box-sizing:border-box}body{margin:0;font:14px/1.45 Segoe UI,Arial,sans-serif;background:var(--bg);color:#17313d}.wrap{width:min(1180px,calc(100% - 28px));margin:auto}header{background:var(--navy);color:#fff}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:17px 0}.top small{display:block;color:#cfe0e7}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin:18px 0;box-shadow:0 9px 24px rgba(7,54,74,.07)}h2,h3{margin-top:0;color:var(--navy)}.sub{color:var(--muted)}label{font-weight:800;font-size:.78rem}input,select,textarea{width:100%;margin-top:5px;padding:10px;border:1px solid #cbd9df;border-radius:9px;background:#fff;font:inherit}.btn{border:0;border-radius:9px;padding:10px 13px;background:var(--navy);color:#fff;font-weight:850;cursor:pointer;text-decoration:none;display:inline-block}.btn.alt{background:#fff;color:var(--navy);border:1px solid var(--line)}.hidden{display:none!important}.result{display:none;margin-top:10px;padding:11px;border-radius:9px}.result.ok{display:block;background:#e9f6ef;color:#205b40}.result.err{display:block;background:#fff0ef;color:#8b3129}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tab{border:1px solid var(--line);background:#fff;color:var(--navy);padding:9px 13px;border-radius:9px;font-weight:800;cursor:pointer}.tab.active{background:var(--navy);color:#fff}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px}.card small{display:block;color:var(--muted)}.card b{font-size:1.35rem;color:var(--navy)}.table{overflow:auto;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:900px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:.76rem}th{background:#f5f8f9;color:#52636b;text-transform:uppercase;font-size:.67rem}.chip{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf2f4;font-size:.67rem;font-weight:900}.chip.ok{background:#e6f4ec;color:var(--ok)}.chip.warn{background:#fff0c9;color:var(--warn)}.chip.info{background:#e7f1f6;color:var(--info)}@media(max-width:760px){.cards{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+:root{--navy:#07364a;--line:#d8e2e6;--bg:#f3f6f7;--muted:#687b84;--ok:#24744f;--warn:#946400;--bad:#96372f;--info:#2a6380}*{box-sizing:border-box}body{margin:0;font:14px/1.45 Segoe UI,Arial,sans-serif;background:var(--bg);color:#17313d}.wrap{width:min(1180px,calc(100% - 28px));margin:auto}header{background:var(--navy);color:#fff}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:17px 0}.top small{display:block;color:#cfe0e7}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin:18px 0;box-shadow:0 9px 24px rgba(7,54,74,.07)}h2,h3{margin-top:0;color:var(--navy)}.sub{color:var(--muted)}label{font-weight:800;font-size:.78rem}input,select,textarea{width:100%;margin-top:5px;padding:10px;border:1px solid #cbd9df;border-radius:9px;background:#fff;font:inherit}.btn{border:0;border-radius:9px;padding:10px 13px;background:var(--navy);color:#fff;font-weight:850;cursor:pointer;text-decoration:none;display:inline-block}.btn:disabled{opacity:.65;cursor:not-allowed}.btn.alt{background:#fff;color:var(--navy);border:1px solid var(--line)}.hidden{display:none!important}.result{display:none;margin-top:10px;padding:11px;border-radius:9px;white-space:pre-wrap}.result.ok{display:block;background:#e9f6ef;color:#205b40}.result.err{display:block;background:#fff0ef;color:#8b3129}.result.info{display:block;background:#e7f1f6;color:#2a6380}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tab{border:1px solid var(--line);background:#fff;color:var(--navy);padding:9px 13px;border-radius:9px;font-weight:800;cursor:pointer}.tab.active{background:var(--navy);color:#fff}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px}.card small{display:block;color:var(--muted)}.card b{font-size:1.35rem;color:var(--navy)}.table{overflow:auto;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:900px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:.76rem}th{background:#f5f8f9;color:#52636b;text-transform:uppercase;font-size:.67rem}.chip{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf2f4;font-size:.67rem;font-weight:900}.chip.ok{background:#e6f4ec;color:var(--ok)}.chip.warn{background:#fff0c9;color:var(--warn)}.chip.info{background:#e7f1f6;color:var(--info)}@media(max-width:760px){.cards{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
@@ -16,7 +15,7 @@
 <h2>Acesso do Professor</h2>
 <p class="sub">Sem senha. Clique abaixo para receber no seu e-mail um link direto de acesso ao painel.</p>
 <label>E-mail<input id="email" type="email" value="juniorpedrocolombo@gmail.com" readonly></label>
-<button class="btn" id="magicBtn" style="width:100%;margin-top:14px">Enviar link de acesso</button>
+<button class="btn" id="magicBtn" type="button" style="width:100%;margin-top:14px">Enviar link de acesso</button>
 <div id="accessResult" class="result"></div>
 </section>
 <section id="app" class="hidden">
@@ -35,18 +34,53 @@
 <script>
 const URL='https://klkpkjkvwsojlovguhcf.supabase.co';
 const KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw';
-const sb=supabase.createClient(URL,KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const label=s=>({AWAITING_ORIGINAL:'Aguardando original',AWAITING_SIGNED:'Aguardando assinatura',AWAITING_REVIEW:'Aguardando validação',CHANGES_REQUESTED:'Regularização/Ajustes',APPROVED:'Aprovado',REJECTED:'Rejeitado',IN_REVIEW:'Em análise',NOT_STARTED:'Não iniciada'}[s]||s||'—');
-function show(ok,msg){const el=$('accessResult');el.className='result '+(ok?'ok':'err');el.textContent=msg}
-async function verifyProfessor(){const {data:{user}}=await sb.auth.getUser();if(!user)return false;const {data}=await sb.from('ptcc_v2_profiles').select('role').eq('id',user.id).maybeSingle();return data?.role==='professor'}
-async function openApp(){if(!await verifyProfessor()){show(false,'Conta sem permissão de professor.');return}$('accessPanel').classList.add('hidden');$('app').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');await loadAll()}
-$('magicBtn').onclick=async()=>{try{const email=$('email').value.trim();const redirect=location.origin+location.pathname;const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:redirect,shouldCreateUser:false}});if(error)throw error;show(true,'Link enviado para seu e-mail. Clique nele para abrir o painel.')}catch(e){show(false,e.message)}};
-$('logoutBtn').onclick=async()=>{await sb.auth.signOut();location.reload()};
+function show(type,msg){const el=$('accessResult');el.className='result '+type;el.textContent=msg}
+
+async function sendMagicLink(){
+  const btn=$('magicBtn');
+  const email=$('email').value.trim();
+  const redirect=location.origin+location.pathname;
+  btn.disabled=true;
+  btn.textContent='Enviando...';
+  show('info','Solicitando o link de acesso...');
+  try{
+    const r=await fetch(URL+'/auth/v1/otp?redirect_to='+encodeURIComponent(redirect),{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY},
+      body:JSON.stringify({email,create_user:false})
+    });
+    let data={};
+    try{data=await r.json()}catch(_){ }
+    if(!r.ok) throw new Error(data.msg||data.message||data.error_description||data.error||('Erro HTTP '+r.status));
+    show('ok','Link enviado para '+email+'. Abra o e-mail e clique no link para entrar no painel.');
+  }catch(e){
+    console.error('Falha ao enviar magic link:',e);
+    show('err','Não foi possível enviar o link.\n'+(e?.message||String(e)));
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Enviar link de acesso';
+  }
+}
+$('magicBtn').addEventListener('click',sendMagicLink);
+
+function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Falha ao carregar '+src));document.head.appendChild(s)})}
+async function loadSupabase(){
+  if(window.supabase)return window.supabase;
+  try{await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2')}catch(_){await loadScript('https://unpkg.com/@supabase/supabase-js@2')}
+  if(!window.supabase)throw new Error('Biblioteca do Supabase não carregou.');
+  return window.supabase;
+}
+let sb=null;
+async function getClient(){if(sb)return sb;const lib=await loadSupabase();sb=lib.createClient(URL,KEY);return sb}
+async function verifyProfessor(){const c=await getClient();const {data:{user}}=await c.auth.getUser();if(!user)return false;const {data,error}=await c.from('ptcc_v2_profiles').select('role').eq('id',user.id).maybeSingle();if(error)throw error;return data?.role==='professor'}
+async function openApp(){if(!await verifyProfessor()){show('err','Conta sem permissão de professor.');return}$('accessPanel').classList.add('hidden');$('app').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');await loadAll()}
+$('logoutBtn').onclick=async()=>{const c=await getClient();await c.auth.signOut();location.reload()};
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.pane').forEach(x=>x.classList.add('hidden'));$(b.dataset.pane).classList.remove('hidden')});
-async function loadAll(){const [r,g,m,s,sub]=await Promise.all([sb.from('ptcc_v2_requests').select('*').order('created_at',{ascending:false}),sb.from('ptcc_v2_groups').select('*').order('code'),sb.from('ptcc_v2_members').select('*'),sb.from('ptcc_v2_stages').select('*').eq('active',true).order('sort_order'),sb.from('ptcc_v2_submissions').select('*').order('submitted_at',{ascending:false})]);const err=r.error||g.error||m.error||s.error||sub.error;if(err){alert(err.message);return}const R=r.data||[],G=g.data||[],M=m.data||[],S=s.data||[],U=sub.data||[];$('stats').innerHTML='<div class="card"><small>Grupos</small><b>'+G.length+'</b></div><div class="card"><small>Termos para validar</small><b>'+R.filter(x=>x.status==='AWAITING_REVIEW').length+'</b></div><div class="card"><small>Regularizações</small><b>'+R.filter(x=>x.status==='CHANGES_REQUESTED').length+'</b></div><div class="card"><small>Entregas em análise</small><b>'+U.filter(x=>x.status==='IN_REVIEW').length+'</b></div>';$('requestsBody').innerHTML=R.map(x=>'<tr><td><b>'+esc(x.protocol)+'</b></td><td>'+esc(x.group_name)+'<br>'+esc(x.theme||'—')+'</td><td>'+esc(x.representative_name)+'<br>'+esc(x.vice_name)+'</td><td><span class="chip info">'+esc(label(x.status))+'</span></td></tr>').join('')||'<tr><td colspan="4">Nenhuma solicitação.</td></tr>';$('groupsBody').innerHTML=G.map(x=>'<tr><td><b>'+esc(x.code)+'</b></td><td>'+esc(x.name)+'</td><td>'+esc(x.theme||'—')+'</td><td>'+x.progress+'%</td><td>'+M.filter(m=>m.group_id===x.id).map(m=>esc(m.name)+' — '+esc(m.member_role)).join('<br>')+'</td></tr>').join('')||'<tr><td colspan="5">Nenhum grupo.</td></tr>';$('submissionsBody').innerHTML=U.map(x=>{const gr=G.find(g=>g.id===x.group_id),st=S.find(s=>s.id===x.stage_id);return '<tr><td><b>'+esc(x.protocol)+'</b></td><td>'+esc(gr?.code||'—')+'</td><td>'+esc(st?.name||'—')+'</td><td><span class="chip info">'+esc(label(x.status))+'</span></td></tr>'}).join('')||'<tr><td colspan="4">Nenhuma entrega.</td></tr>';$('stagesBody').innerHTML=S.map(x=>'<tr><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.opens_on||'—')+'</td><td>'+esc(x.due_on||'—')+'</td><td>'+esc(x.release_mode||'—')+'</td></tr>').join('')}
-(async()=>{const {data:{session}}=await sb.auth.getSession();if(session&&await verifyProfessor())await openApp()})();
+async function loadAll(){const c=await getClient();const [r,g,m,s,sub]=await Promise.all([c.from('ptcc_v2_requests').select('*').order('created_at',{ascending:false}),c.from('ptcc_v2_groups').select('*').order('code'),c.from('ptcc_v2_members').select('*'),c.from('ptcc_v2_stages').select('*').eq('active',true).order('sort_order'),c.from('ptcc_v2_submissions').select('*').order('submitted_at',{ascending:false})]);const err=r.error||g.error||m.error||s.error||sub.error;if(err){alert(err.message);return}const R=r.data||[],G=g.data||[],M=m.data||[],S=s.data||[],U=sub.data||[];$('stats').innerHTML='<div class="card"><small>Grupos</small><b>'+G.length+'</b></div><div class="card"><small>Termos para validar</small><b>'+R.filter(x=>x.status==='AWAITING_REVIEW').length+'</b></div><div class="card"><small>Regularizações</small><b>'+R.filter(x=>x.status==='CHANGES_REQUESTED').length+'</b></div><div class="card"><small>Entregas em análise</small><b>'+U.filter(x=>x.status==='IN_REVIEW').length+'</b></div>';$('requestsBody').innerHTML=R.map(x=>'<tr><td><b>'+esc(x.protocol)+'</b></td><td>'+esc(x.group_name)+'<br>'+esc(x.theme||'—')+'</td><td>'+esc(x.representative_name)+'<br>'+esc(x.vice_name)+'</td><td><span class="chip info">'+esc(label(x.status))+'</span></td></tr>').join('')||'<tr><td colspan="4">Nenhuma solicitação.</td></tr>';$('groupsBody').innerHTML=G.map(x=>'<tr><td><b>'+esc(x.code)+'</b></td><td>'+esc(x.name)+'</td><td>'+esc(x.theme||'—')+'</td><td>'+x.progress+'%</td><td>'+M.filter(m=>m.group_id===x.id).map(m=>esc(m.name)+' — '+esc(m.member_role)).join('<br>')+'</td></tr>').join('')||'<tr><td colspan="5">Nenhum grupo.</td></tr>';$('submissionsBody').innerHTML=U.map(x=>{const gr=G.find(g=>g.id===x.group_id),st=S.find(s=>s.id===x.stage_id);return '<tr><td><b>'+esc(x.protocol)+'</b></td><td>'+esc(gr?.code||'—')+'</td><td>'+esc(st?.name||'—')+'</td><td><span class="chip info">'+esc(label(x.status))+'</span></td></tr>'}).join('')||'<tr><td colspan="4">Nenhuma entrega.</td></tr>';$('stagesBody').innerHTML=S.map(x=>'<tr><td><b>'+esc(x.name)+'</b></td><td>'+esc(x.opens_on||'—')+'</td><td>'+esc(x.due_on||'—')+'</td><td>'+esc(x.release_mode||'—')+'</td></tr>').join('')}
+(async()=>{try{const c=await getClient();const {data:{session}}=await c.auth.getSession();if(session&&await verifyProfessor())await openApp()}catch(e){console.error(e)}})();
 </script>
 </body>
 </html>
