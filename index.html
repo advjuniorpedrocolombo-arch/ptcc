@@ -18,6 +18,7 @@
 <script src="./termo-modelo.js?ts=${Date.now()}"><\/script>
 <script src="./aluno-dashboard.js?ts=${Date.now()}"><\/script>
 <script src="./contato-professor.js?ts=${Date.now()}"><\/script>
+<script src="./auth-acesso.js?ts=${Date.now()}"><\/script>
 <script>
 (function(){
   const form=document.getElementById('termCreateForm');
@@ -28,8 +29,14 @@
     let path='';
     try{
       btn.disabled=true;btn.textContent='Gerando Termo...';
-      const integrantes=[...document.querySelectorAll('.member-row')].map(r=>({nome:r.querySelector('.mName').value.trim(),email:r.querySelector('.mEmail').value.trim()})).filter(x=>x.nome&&x.email);
+      const linhas=[...document.querySelectorAll('.member-row')].map(r=>({nome:r.querySelector('.mName').value.trim(),email:r.querySelector('.mEmail').value.trim()}));
+      const incompleto=linhas.find(x=>(x.nome&&!x.email)||(!x.nome&&x.email));
+      if(incompleto)throw new Error('Preencha nome e e-mail de cada integrante adicionado, ou remova a linha vazia.');
+      const integrantes=linhas.filter(x=>x.nome&&x.email);
       const d={nomeGrupo:document.getElementById('termNomeGrupo').value.trim(),tema:document.getElementById('termTema').value.trim(),rep:document.getElementById('termRep').value.trim(),emailRep:document.getElementById('termEmailRep').value.trim(),vice:document.getElementById('termVice').value.trim(),emailVice:document.getElementById('termEmailVice').value.trim(),integrantes};
+      const emails=[d.emailRep,d.emailVice,...integrantes.map(x=>x.email)].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);
+      const repetido=emails.find((email,i)=>emails.indexOf(email)!==i);
+      if(repetido)throw new Error('Cada integrante deve informar um e-mail diferente. O e-mail '+repetido+' está repetido.');
       const {data,error}=await sb.rpc('iniciar_termo',{p_nome_grupo:d.nomeGrupo,p_tema:d.tema,p_representante:d.rep,p_email_representante:d.emailRep,p_vice_representante:d.vice,p_email_vice:d.emailVice,p_integrantes:integrantes});
       if(error)throw error;
       const protocolo=data?.[0]?.protocolo;
