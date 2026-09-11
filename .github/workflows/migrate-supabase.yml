@@ -1,0 +1,29 @@
+name: Migrar PTCC para Supabase
+
+on:
+  push:
+    paths:
+      - '.github/workflows/migrate-supabase.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copiar frontend Supabase
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/advjuniorpedrocolombo-arch/3-TANE-IBIUNA/main/ptcc-supabase/index.html -o index.html
+          curl -fsSL https://raw.githubusercontent.com/advjuniorpedrocolombo-arch/3-TANE-IBIUNA/main/ptcc-supabase/professor.html -o professor.html
+          curl -fsSL https://raw.githubusercontent.com/advjuniorpedrocolombo-arch/3-TANE-IBIUNA/main/ptcc-supabase/README.md -o README.md
+          rm -rf backend logo-etec.svg
+      - name: Publicar migração
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Migrar PTCC para Supabase" || exit 0
+          git push
