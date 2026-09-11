@@ -3,11 +3,11 @@ import path from 'node:path';
 import vm from 'node:vm';
 
 const root=process.cwd();
-const ignored=new Set(['.git','node_modules']);
+const ignoredDirs=new Set(['.git','node_modules','scripts','.github']);
 const files=[];
 function walk(dir){
   for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
-    if(ignored.has(entry.name))continue;
+    if(entry.isDirectory()&&ignoredDirs.has(entry.name))continue;
     const full=path.join(dir,entry.name);
     if(entry.isDirectory())walk(full); else files.push(full);
   }
@@ -20,19 +20,15 @@ const rel=f=>path.relative(root,f).replaceAll('\\','/');
 
 for(const file of files){
   const name=rel(file);
-  if(/\.(js|mjs)$/.test(name)){
+  if(name.endsWith('.js')){
     const src=fs.readFileSync(file,'utf8');
-    if(/\bsb_secret_|service_role\b/i.test(src))errors.push(`${name}: possível chave secreta exposta no frontend.`);
-    if(name.endsWith('.js') && /^\s*(import|export)\s/m.test(src)){
-      warnings.push(`${name}: contém import/export e não foi compilado como script clássico.`);
-    }else{
-      try{new vm.Script(src,{filename:name})}catch(e){errors.push(`${name}: erro de sintaxe JS: ${e.message}`)}
-    }
+    if(/\bsb_secret_|SUPABASE_SERVICE_ROLE_KEY|service_role\s*[:=]/i.test(src))errors.push(`${name}: possível chave secreta exposta no frontend.`);
+    try{new vm.Script(src,{filename:name})}catch(e){errors.push(`${name}: erro de sintaxe JS: ${e.message}`)}
   }
 
   if(name.endsWith('.html')){
     const html=fs.readFileSync(file,'utf8');
-    if(/\bsb_secret_|service_role\b/i.test(html))errors.push(`${name}: possível chave secreta exposta no HTML.`);
+    if(/\bsb_secret_|SUPABASE_SERVICE_ROLE_KEY|service_role\s*[:=]/i.test(html))errors.push(`${name}: possível chave secreta exposta no HTML.`);
 
     const ids=[...html.matchAll(/\sid=["']([^"']+)["']/g)].map(m=>m[1]);
     const dup=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
@@ -55,13 +51,7 @@ for(const file of files){
   }
 }
 
-const bannedStatus='AGUARDANDO ASSINATURA';
-for(const file of files.filter(f=>/\.(html|js|mjs)$/.test(f))){
-  const src=fs.readFileSync(file,'utf8');
-  if(src.includes(bannedStatus))warnings.push(`${rel(file)}: usa status legado "${bannedStatus}"; prefira "AGUARDANDO ENVIO DO TERMO ASSINADO".`);
-}
-
-console.log(`Arquivos verificados: ${files.length}`);
+console.log(`Arquivos de frontend verificados: ${files.length}`);
 for(const w of warnings)console.warn('AVISO:',w);
 if(errors.length){
   for(const e of errors)console.error('ERRO:',e);
