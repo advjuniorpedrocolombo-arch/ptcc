@@ -1,25 +1,38 @@
-# PTCC — Supabase v2
+# PTCC — Técnico em Marketing — Etec Extensão Ibiúna
 
-Nova versão da plataforma PTCC, construída sem alterar a versão original em `/ptcc`.
+Reconstrução completa da Plataforma PTCC em 11/09/2026.
 
-## Arquitetura
-- GitHub Pages: frontend
-- Supabase Postgres: dados acadêmicos, grupos, etapas, entregas, feedbacks e histórico
-- Supabase Auth: acesso individual de alunos e professor
-- Supabase Storage: PDFs privados (10 MB, somente application/pdf)
-- RLS: isolamento dos dados por grupo e perfil de professor
+## Arquitetura atual
 
-## Páginas
-- `index.html`: página pública + Termo de Compromisso + acesso do grupo
-- `professor.html`: painel administrativo
+- `index.html` — portal do aluno: cadastro da equipe, geração do Termo, envio do Termo assinado, consulta de protocolo, primeiro acesso, recuperação de senha, área do grupo e entregas.
+- `professor.html` — painel administrativo: validação de Termos, grupos, entregas, devolutivas, aprovação e cronograma.
+- Supabase — autenticação, banco PostgreSQL, RLS, Storage e Edge Function.
+- Bucket ativo: `ptcc-v2`.
+- Edge Function ativa: `aprovar-termo`.
+- Tabelas ativas da reconstrução utilizam o prefixo `ptcc_v2_`.
 
 ## Fluxo
-1. Equipe envia Termo e recebe protocolo.
-2. Professor valida a solicitação no painel administrativo.
-3. Banco cria código G01/G02..., projeto e etapas do grupo.
-4. Integrantes criam acesso com o mesmo e-mail informado no Termo.
-5. Grupo envia etapas em PDF; cada envio recebe protocolo e versão.
-6. Professor aprova ou solicita ajustes.
-7. Grupo acompanha status, progresso, versões e devolutivas.
 
-A chave presente no frontend é a chave **publishable** do Supabase, adequada a aplicações públicas. A proteção dos dados é feita pelas políticas RLS no banco.
+1. Aluno cadastra a equipe.
+2. O sistema gera protocolo e PDF do Termo de Compromisso.
+3. A equipe imprime e assina manualmente.
+4. Representante ou vice envia o PDF assinado.
+5. Professor confere e valida no painel.
+6. O grupo é criado e os integrantes recebem convite ou recuperação de acesso por e-mail.
+7. Cada integrante define a própria senha.
+8. O grupo envia as etapas em PDF.
+9. Professor aprova ou solicita ajustes.
+
+## Segurança
+
+- Área administrativa exige autenticação e perfil `professor`.
+- Alunos só visualizam dados do próprio grupo.
+- PDFs ficam em bucket privado.
+- Funções administrativas verificam permissão no banco.
+- Arquivos antigos e arquitetura anterior não são utilizados pela V2.
+
+## Backup
+
+O código anterior ao rebuild foi preservado na branch:
+
+`backup-antes-rebuild-2026-09-11`
