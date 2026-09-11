@@ -9,10 +9,10 @@
 </head>
 <body>
 <div class="bar"><b>PTCC — Área do Professor</b><button id="btnPainel" class="active">Painel principal</button><button id="btnCronograma">Cronograma e datas</button></div>
-<iframe id="frame" class="frame" src="./professor-main.html?v=20260911-1730" title="Painel do Professor"></iframe>
+<iframe id="frame" class="frame" title="Painel do Professor"></iframe>
 <script>
 const frame=document.getElementById('frame'),bp=document.getElementById('btnPainel'),bc=document.getElementById('btnCronograma');
 function go(page,btn){frame.src=page+'?v='+Date.now();[bp,bc].forEach(x=>x.classList.remove('active'));btn.classList.add('active')}
-bp.onclick=()=>go('./professor-main.html',bp);bc.onclick=()=>go('./professor-cronograma.html',bc);
+bp.onclick=()=>go('./professor-main.html',bp);bc.onclick=()=>go('./professor-cronograma.html',bc);go('./professor-main.html',bp);
 </script>
 </body></html>
