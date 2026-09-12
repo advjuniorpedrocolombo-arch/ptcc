@@ -1,4 +1,4 @@
-name: Atualizar canais oficiais do PTCC
+name: Atualizar painel PTCC — excluir cadastros pendentes
 
 on:
   push:
@@ -13,57 +13,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Atualizar formulário e termo
+      - name: Atualizar painel do professor
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          p=Path('painel-professor-v5.html')
+          s=p.read_text(encoding='utf-8')
 
-          files = [Path('index.html'), Path('termo.html')]
-          for p in files:
-              s = p.read_text(encoding='utf-8')
+          old='<div id="requests" class="pane"><p class="sub">Confira o PDF assinado antes de validar.</p>'
+          new='<div id="requests" class="pane"><p class="sub">Confira o PDF assinado antes de validar. Cadastros duplicados ou enviados por engano podem ser excluídos enquanto ainda não tiverem sido aprovados.</p>'
+          if old in s:
+              s=s.replace(old,new,1)
 
-              old_css = "input,select{width:100%;padding:10px 11px;border:1px solid #cbd9df;border-radius:9px;background:#fff;margin-top:5px;font:inherit}"
-              new_css = old_css + ".channel-box{grid-column:1/-1;border:1px solid #d8e2e6;border-radius:10px;padding:12px;background:#f8fafb}.channel-title{font-size:.8rem;font-weight:800;color:#40545d;margin-bottom:8px}.channel-options{display:flex;gap:12px;flex-wrap:wrap}.channel-options label{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.88rem;color:#40545d}.channel-options input[type=checkbox]{width:auto;margin:0}.other-channel{margin-top:10px;max-width:420px}"
-              if old_css not in s:
-                  raise SystemExit(f'CSS base não encontrado em {p}')
-              s = s.replace(old_css, new_css, 1)
+          old="<td><span class=\"chip ${approved?'good':r.status==='CHANGES_REQUESTED'?'warn':'info'}\">${esc(label(r.status))}</span></td><td>${decision}</td></tr>`}function renderRequests()"
+          new="<td><span class=\"chip ${approved?'good':r.status==='CHANGES_REQUESTED'?'warn':'info'}\">${esc(label(r.status))}</span></td><td>${decision}${!approved?`<div class=\"actions\" style=\"margin-top:8px\"><button class=\"btn bad\" onclick=\"deleteRequest('${r.id}')\">🗑 Excluir cadastro</button></div>`:''}</td></tr>`}function renderRequests()"
+          if old in s:
+              s=s.replace(old,new,1)
 
-              old_field = '<label>Canal oficial da equipe<input id="channel" required placeholder="Ex.: PTCC FANTÁSTICO MARKETING"></label>'
-              new_field = '''<div class="channel-box"><div class="channel-title">Canais oficiais da equipe</div><div class="channel-options"><label><input class="channelOption" type="checkbox" value="WhatsApp"> WhatsApp</label><label><input class="channelOption" type="checkbox" value="e-mail"> E-mail</label><label><input class="channelOption" type="checkbox" value="reuniões presenciais"> Reuniões presenciais</label><label><input class="channelOption" type="checkbox" value="reuniões on-line"> Reuniões on-line</label><label><input class="channelOption" id="channelOtherCheck" type="checkbox" value="outros"> Outros</label></div><input id="channelOther" class="other-channel hidden" placeholder="Especifique outro canal"></div>'''
-              if old_field not in s:
-                  raise SystemExit(f'Campo antigo não encontrado em {p}')
-              s = s.replace(old_field, new_field, 1)
+          marker="window.toggleReject=id=>{$('reject-'+id)?.classList.toggle('hidden')};\nasync function sendAccess"
+          if 'ptcc_v2_delete_pending_request' not in s:
+              insert="""window.toggleReject=id=>{$('reject-'+id)?.classList.toggle('hidden')};
+async function removeStoredPaths(paths){const clean=(paths||[]).filter(Boolean);if(!clean.length)return;const r=await fetch(SUPA+'/storage/v1/object/ptcc-v2',{method:'DELETE',headers:hdr(),body:JSON.stringify({prefixes:clean})});if(!r.ok){let j={};try{j=await r.json()}catch{}throw new Error(j.message||j.error||'Não foi possível remover os PDFs do armazenamento.')}}
+window.deleteRequest=async id=>{const r=REQ.find(x=>x.id===id);if(!r)return;if(r.status==='APPROVED'||r.group_id){show('requestActionResult','err','Grupos já aprovados não podem ser excluídos. Utilize o arquivamento administrativo.');return}const ok=confirm('Excluir definitivamente o cadastro '+r.protocol+' — '+r.group_name+'?\\n\\nUse esta opção somente para cadastros duplicados ou enviados por engano. Esta ação não poderá ser desfeita.');if(!ok)return;try{const out=await rpc('ptcc_v2_delete_pending_request',{p_request:id}),d=out?.[0]||{};let warn='';try{await removeStoredPaths([d.original_path,d.signed_path])}catch(e){warn=' O cadastro foi excluído, mas houve falha ao limpar um dos PDFs do armazenamento: '+e.message}show('requestActionResult',warn?'warn':'ok','Cadastro '+esc(d.protocol||r.protocol)+' excluído.'+esc(warn));await loadData()}catch(e){show('requestActionResult','err',esc(e.message))}};
+async function sendAccess"""
+              if marker not in s: raise SystemExit('ponto de inserção não encontrado')
+              s=s.replace(marker,insert,1)
 
-              marker = "$('addMember').addEventListener('click',addMember);addMember();"
-              helper = """$('addMember').addEventListener('click',addMember);addMember();const otherCheck=$('channelOtherCheck'),otherInput=$('channelOther');otherCheck.addEventListener('change',()=>{otherInput.classList.toggle('hidden',!otherCheck.checked);otherInput.required=otherCheck.checked;if(!otherCheck.checked)otherInput.value=''});function getChannels(){const selected=[...document.querySelectorAll('.channelOption:checked')].map(x=>x.value).filter(v=>v!=='outros');if(otherCheck.checked){const other=otherInput.value.trim();if(!other)throw new Error('Especifique o canal selecionado em Outros.');selected.push(other)}if(!selected.length)throw new Error('Selecione pelo menos um canal oficial da equipe.');if(selected.length===1)return selected[0];if(selected.length===2)return selected[0]+' e '+selected[1];return selected.slice(0,-1).join(', ')+' e '+selected.at(-1)}"""
-              if marker not in s:
-                  raise SystemExit(f'Marcador JS não encontrado em {p}')
-              s = s.replace(marker, helper, 1)
-
-              old_obj = "channel:$('channel').value.trim(),members:rows"
-              new_obj = "channel:getChannels(),members:rows"
-              if old_obj not in s:
-                  raise SystemExit(f'Objeto channel não encontrado em {p}')
-              s = s.replace(old_obj, new_obj, 1)
-
-              old_clause = "'A equipe utilizará o grupo “'+d.channel+'” como canal interno de comunicação, devendo seus integrantes acompanhar as mensagens, orientações e definições relacionadas ao trabalho. As comunicações do professor realizadas em sala de aula ou pelos canais institucionais deverão ser consideradas de ciência de todos os integrantes.'"
-              new_clause = "'A equipe utilizará como canais oficiais de comunicação '+d.channel+', devendo seus integrantes acompanhar as mensagens, orientações, reuniões e definições relacionadas ao trabalho. As comunicações do professor realizadas em sala de aula ou pelos canais institucionais deverão ser consideradas de ciência de todos os integrantes.'"
-              if old_clause not in s:
-                  raise SystemExit(f'Cláusula 9 não encontrada em {p}')
-              s = s.replace(old_clause, new_clause, 1)
-
-              p.write_text(s, encoding='utf-8')
+          if 'Excluir cadastro' not in s or 'ptcc_v2_delete_pending_request' not in s:
+              raise SystemExit('alteração não aplicada')
+          p.write_text(s,encoding='utf-8')
           PY
       - name: Validar alterações
         run: |
-          grep -q 'Canais oficiais da equipe' index.html
-          grep -q 'Canais oficiais da equipe' termo.html
-          grep -q 'getChannels()' index.html
-          grep -q 'como canais oficiais de comunicação' termo.html
+          grep -q 'Excluir cadastro' painel-professor-v5.html
+          grep -q 'ptcc_v2_delete_pending_request' painel-professor-v5.html
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html termo.html
-          git commit -m 'Adiciona seleção múltipla de canais oficiais no Termo PTCC'
+          git add painel-professor-v5.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Adiciona exclusão segura de cadastros pendentes no painel PTCC'
           git push
