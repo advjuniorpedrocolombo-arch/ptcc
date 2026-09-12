@@ -23,12 +23,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Corrigir conflito com URL nativa do navegador
+        shell: python
+        run: |
+          from pathlib import Path
+          for name in ("index.html", "termo.html"):
+              p = Path(name)
+              if not p.exists():
+                  continue
+              t = p.read_text(encoding="utf-8")
+              t = t.replace("const URL='https://klkpkjkvwsojlovguhcf.supabase.co'", "const SUPABASE_URL='https://klkpkjkvwsojlovguhcf.supabase.co'")
+              t = t.replace("fetch(URL+'/rest/v1/rpc/'", "fetch(SUPABASE_URL+'/rest/v1/rpc/'")
+              t = t.replace("fetch(URL+'/storage/v1/object/'", "fetch(SUPABASE_URL+'/storage/v1/object/'")
+              t = t.replace("if(lastPdfUrl)URL.revokeObjectURL(lastPdfUrl)", "if(lastPdfUrl)window.URL.revokeObjectURL(lastPdfUrl)")
+              t = t.replace("lastPdfUrl=URL.createObjectURL(blob)", "lastPdfUrl=window.URL.createObjectURL(blob)")
+              p.write_text(t, encoding="utf-8")
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
