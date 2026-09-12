@@ -47,3 +47,4 @@ async function sendAccess"""
           git add painel-professor-v5.html
           git commit -m "Adiciona exclusão segura de cadastros pendentes no painel PTCC" || exit 0
           git push
+# trigger
