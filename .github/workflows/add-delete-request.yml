@@ -1,0 +1,49 @@
+name: Adicionar exclusão de cadastros PTCC
+on:
+  push:
+    paths:
+      - '.github/workflows/add-delete-request.yml'
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Atualizar painel
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('painel-professor-v5.html')
+          s=p.read_text(encoding='utf-8')
+
+          old='<div id="requests" class="pane"><p class="sub">Confira o PDF assinado antes de validar.</p>'
+          new='<div id="requests" class="pane"><p class="sub">Confira o PDF assinado antes de validar. Cadastros duplicados ou enviados por engano podem ser excluídos enquanto ainda não tiverem sido aprovados.</p>'
+          if old not in s: raise SystemExit('texto da aba de termos não encontrado')
+          s=s.replace(old,new,1)
+
+          old="<td><span class=\"chip ${approved?'good':r.status==='CHANGES_REQUESTED'?'warn':'info'}\">${esc(label(r.status))}</span></td><td>${decision}</td></tr>`}function renderRequests()"
+          new="<td><span class=\"chip ${approved?'good':r.status==='CHANGES_REQUESTED'?'warn':'info'}\">${esc(label(r.status))}</span></td><td>${decision}${!approved?`<div class=\"actions\" style=\"margin-top:8px\"><button class=\"btn bad\" onclick=\"deleteRequest('${r.id}')\">🗑 Excluir cadastro</button></div>`:''}</td></tr>`}function renderRequests()"
+          if old not in s: raise SystemExit('renderização da decisão não encontrada')
+          s=s.replace(old,new,1)
+
+          marker="window.toggleReject=id=>{$('reject-'+id)?.classList.toggle('hidden')};\nasync function sendAccess"
+          insert="""window.toggleReject=id=>{$('reject-'+id)?.classList.toggle('hidden')};
+async function removeStoredPaths(paths){const clean=(paths||[]).filter(Boolean);if(!clean.length)return;const r=await fetch(SUPA+'/storage/v1/object/ptcc-v2',{method:'DELETE',headers:hdr(),body:JSON.stringify({prefixes:clean})});if(!r.ok){let j={};try{j=await r.json()}catch{}throw new Error(j.message||j.error||'Não foi possível remover os PDFs do armazenamento.')}}
+window.deleteRequest=async id=>{const r=REQ.find(x=>x.id===id);if(!r)return;if(r.status==='APPROVED'||r.group_id){show('requestActionResult','err','Grupos já aprovados não podem ser excluídos. Utilize o arquivamento administrativo.');return}const ok=confirm('Excluir definitivamente o cadastro '+r.protocol+' — '+r.group_name+'?\\n\\nUse esta opção somente para cadastros duplicados ou enviados por engano. Esta ação não poderá ser desfeita.');if(!ok)return;try{const out=await rpc('ptcc_v2_delete_pending_request',{p_request:id}),d=out?.[0]||{};let warn='';try{await removeStoredPaths([d.original_path,d.signed_path])}catch(e){warn=' O cadastro foi excluído, mas houve falha ao limpar um dos PDFs do armazenamento: '+e.message}show('requestActionResult',warn?'warn':'ok','Cadastro '+esc(d.protocol||r.protocol)+' excluído.'+esc(warn));await loadData()}catch(e){show('requestActionResult','err',esc(e.message))}};
+async function sendAccess"""
+          if marker not in s: raise SystemExit('ponto de inserção das ações não encontrado')
+          s=s.replace(marker,insert,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validar alterações
+        run: |
+          grep -q "ptcc_v2_delete_pending_request" painel-professor-v5.html
+          grep -q "Excluir cadastro" painel-professor-v5.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add painel-professor-v5.html
+          git commit -m "Adiciona exclusão segura de cadastros pendentes no painel PTCC" || exit 0
+          git push
