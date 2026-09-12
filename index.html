@@ -1,22 +1,32 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PTCC — Técnico em Marketing</title></head><body><div id="loading" style="font-family:Arial,sans-serif;padding:40px;text-align:center">Carregando Plataforma PTCC...</div><script>
 (async()=>{
   try{
-    const base='https://raw.githubusercontent.com/advjuniorpedrocolombo-arch/ptcc/db122c317d639787cc5b0ca71aca9cd1a618fbcc/index.html?ts='+Date.now();
-    const r=await fetch(base,{cache:'no-store'});
+    const source='https://raw.githubusercontent.com/advjuniorpedrocolombo-arch/ptcc/db122c317d639787cc5b0ca71aca9cd1a618fbcc/index.html?ts='+Date.now();
+    const r=await fetch(source,{cache:'no-store'});
     if(!r.ok)throw new Error('Falha ao carregar a plataforma.');
-    let html=await r.text();
-    const fix=`<script>
-(function(){
- const btn=document.getElementById('addMember'),box=document.getElementById('members'),out=document.getElementById('requestResult');
- if(!btn||!box)return;
- function msg(t){if(!out)return;out.className='result err';out.textContent=t}
- function refresh(){const n=box.querySelectorAll('.member').length;btn.disabled=n>=3;btn.textContent=n>=3?'Limite de integrantes atingido':'+ Adicionar integrante'}
- function add(){const n=box.querySelectorAll('.member').length;if(n>=3){msg('O limite é de 5 integrantes no total, contando representante e vice.');refresh();return}const row=document.createElement('div');row.className='member';row.innerHTML='<input class="mName" placeholder="Nome completo"><input class="mEmail" type="email" placeholder="e-mail"><button type="button" class="removeMember" aria-label="Remover integrante">×</button>';row.querySelector('.removeMember').onclick=()=>{row.remove();refresh()};box.appendChild(row);refresh()}
- btn.disabled=false;btn.onclick=e=>{e.preventDefault();add()};box.querySelectorAll('.member button').forEach(b=>{b.onclick=()=>{b.closest('.member')?.remove();refresh()}});refresh();
-})();
-<\/script>`;
-    html=html.replace('</body>',fix+'</body>');
-    document.open();document.write(html);document.close();
+    const html=await r.text();
+    const parsed=new DOMParser().parseFromString(html,'text/html');
+    const scripts=[...parsed.querySelectorAll('script')].map(s=>({src:s.src||'',code:s.src?'':s.textContent||''}));
+    parsed.querySelectorAll('script').forEach(s=>s.remove());
+    document.documentElement.lang=parsed.documentElement.lang||'pt-BR';
+    document.head.innerHTML=parsed.head.innerHTML;
+    document.body.innerHTML=parsed.body.innerHTML;
+    for(const item of scripts){
+      await new Promise((resolve,reject)=>{
+        const s=document.createElement('script');
+        if(item.src){s.src=item.src;s.onload=resolve;s.onerror=()=>reject(new Error('Falha ao carregar recurso: '+item.src));}
+        else{s.textContent=item.code;}
+        document.body.appendChild(s);
+        if(!item.src)resolve();
+      });
+    }
+    const btn=document.getElementById('addMember'),box=document.getElementById('members'),out=document.getElementById('requestResult');
+    if(btn&&box){
+      function refresh(){const n=box.querySelectorAll('.member').length;btn.disabled=n>=3;btn.textContent=n>=3?'Limite de integrantes atingido':'+ Adicionar integrante'}
+      box.addEventListener('click',e=>{if(e.target.closest('.removeMember')||e.target.closest('.member button'))setTimeout(refresh,0)});
+      btn.addEventListener('click',()=>setTimeout(refresh,0));
+      refresh();
+    }
   }catch(e){document.body.innerHTML='<div style="font-family:Arial,sans-serif;padding:40px;text-align:center"><h2>Não foi possível carregar a Plataforma PTCC</h2><p>'+String(e.message||e)+'</p><button onclick="location.reload()">Tentar novamente</button></div>'}
 })();
 </script></body></html>
