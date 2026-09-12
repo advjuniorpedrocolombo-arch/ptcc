@@ -1,1 +1,43 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PTCC — Área do Grupo</title></head><body><script>location.replace('./grupo-v2.html'+location.search+location.hash);</script><noscript><a href="./grupo-v2.html">Abrir Área do Grupo</a></noscript></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTCC — Área do Grupo</title>
+<style>
+:root{--navy:#07364a;--bg:#f3f6f7;--line:#d8e2e6;--muted:#687b84;--ok:#24744f;--bad:#96372f;--info:#2a6380}
+*{box-sizing:border-box}body{margin:0;font:15px/1.45 Segoe UI,Arial,sans-serif;background:var(--bg);color:#17313d}
+header{background:var(--navy);color:#fff;padding:18px}.wrap{width:min(1100px,calc(100% - 28px));margin:auto}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin:20px auto;box-shadow:0 9px 24px rgba(7,54,74,.07)}
+h1,h2{color:var(--navy)}label{font-weight:800;font-size:.8rem;display:block;margin-top:12px}
+input{width:100%;padding:10px;border:1px solid #cbd9df;border-radius:9px;margin-top:5px}
+.btn{border:0;border-radius:9px;padding:9px 12px;background:var(--navy);color:#fff;font-weight:850;cursor:pointer;margin-top:8px}.btn.alt{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.hidden{display:none!important}.result{display:none;margin-top:12px;padding:12px;border-radius:9px}.result.ok{display:block;background:#e9f6ef;color:#205b40}.result.err{display:block;background:#fff0ef;color:#8b3129}.result.info{display:block;background:#eaf3f7;color:#285a70}.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<header><div class="wrap"><b>PTCC — Área do Grupo</b><div style="font-size:.85rem;opacity:.8">Técnico em Marketing • Etec Extensão Ibiúna</div></div></header>
+<main class="wrap">
+<section id="loginPanel" class="panel">
+<h1>Acesso do grupo</h1>
+<p class="muted">Use o mesmo e-mail informado no Termo de Compromisso.</p>
+<form id="loginForm"><label>E-mail<input id="email" type="email" required></label><label>Senha<input id="password" type="password" required></label><button class="btn">Entrar</button></form>
+<button class="btn alt" id="forgotBtn" type="button">Esqueci minha senha</button>
+<div id="loginResult" class="result"></div>
+</section>
+<section id="setPasswordPanel" class="panel hidden"><h2>Crie uma nova senha</h2><p class="muted">Digite sua nova senha para concluir a recuperação.</p><label>Nova senha<input id="newPassword" type="password" minlength="6"></label><button class="btn" id="savePasswordBtn">Salvar senha e entrar</button><div id="setResult" class="result"></div></section>
+</main>
+<script>
+const SUPA='https://klkpkjkvwsojlovguhcf.supabase.co',KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw',AT='ptcc_student_access_token',RT='ptcc_student_refresh_token',$=id=>document.getElementById(id);let token='';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function show(id,t,m){const e=$(id);e.className='result '+t;e.innerHTML=m}
+function store(a,r){token=a;localStorage.setItem(AT,a);if(r)localStorage.setItem(RT,r)}
+function go(){location.replace('./grupo-v2.html')}
+function parseHash(){const p=new URLSearchParams(location.hash.replace(/^#/,'')),a=p.get('access_token'),r=p.get('refresh_token'),type=p.get('type');if(!a)return false;store(a,r);history.replaceState({},'',location.pathname+location.search);if(type==='recovery'||type==='invite'){$('loginPanel').classList.add('hidden');$('setPasswordPanel').classList.remove('hidden');return true}go();return true}
+$('loginForm').onsubmit=async e=>{e.preventDefault();try{show('loginResult','info','Entrando...');const r=await fetch(SUPA+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value.trim().toLowerCase(),password:$('password').value})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.message||j.error_description||'E-mail ou senha inválidos.');store(j.access_token,j.refresh_token);go()}catch(e){show('loginResult','err',esc(e.message))}};
+$('forgotBtn').onclick=async()=>{try{const email=$('email').value.trim().toLowerCase();if(!email)throw new Error('Informe seu e-mail.');show('loginResult','info','Solicitando link de recuperação...');const redirect=location.origin+location.pathname;const r=await fetch(SUPA+'/auth/v1/recover?redirect_to='+encodeURIComponent(redirect),{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email})});const text=await r.text();let j={};try{j=text?JSON.parse(text):{}}catch{}if(!r.ok)throw new Error(j.msg||j.message||j.error_description||j.error||('Falha ao solicitar recuperação (HTTP '+r.status+').'));show('loginResult','ok','Solicitação aceita pelo serviço de autenticação. Verifique a caixa de entrada e também Spam/Lixo eletrônico.')}catch(e){show('loginResult','err',esc(e.message))}};
+$('savePasswordBtn').onclick=async()=>{try{const p=$('newPassword').value;if(p.length<6)throw new Error('Use pelo menos 6 caracteres.');const r=await fetch(SUPA+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({password:p})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.message||'Não foi possível salvar a senha.');go()}catch(e){show('setResult','err',esc(e.message))}};
+(async()=>{if(parseHash())return;const saved=localStorage.getItem(AT);if(saved)go()})();
+</script>
+</body>
+</html>
