@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTCC — Criar senha</title>
+<style>
+:root{--navy:#07364a;--bg:#f3f6f7;--line:#d8e2e6;--muted:#687b84;--ok:#24744f;--bad:#96372f;--info:#2a6380}
+*{box-sizing:border-box}body{margin:0;font:15px/1.45 Segoe UI,Arial,sans-serif;background:var(--bg);color:#17313d}
+header{background:var(--navy);color:#fff;padding:18px}.wrap{width:min(520px,calc(100% - 28px));margin:auto}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin:42px auto;box-shadow:0 9px 24px rgba(7,54,74,.07)}h1{color:var(--navy);margin-top:0}label{font-weight:800;font-size:.8rem;display:block;margin-top:12px}input{width:100%;padding:10px;border:1px solid #cbd9df;border-radius:9px;margin-top:5px;font:inherit}.btn{border:0;border-radius:9px;padding:11px 14px;background:var(--navy);color:#fff;font-weight:850;cursor:pointer;margin-top:16px;width:100%}.btn:disabled{opacity:.5;cursor:not-allowed}.result{display:none;margin-top:12px;padding:12px;border-radius:9px}.result.ok{display:block;background:#e9f6ef;color:#205b40}.result.err{display:block;background:#fff0ef;color:#8b3129}.result.info{display:block;background:#eaf3f7;color:#285a70}.muted{color:var(--muted)}.email{background:#f7fafb;border:1px solid var(--line);padding:10px;border-radius:9px;margin:12px 0;font-weight:700}
+</style>
+</head>
+<body>
+<header><div class="wrap"><b>PTCC — Primeiro acesso</b><div style="font-size:.85rem;opacity:.8">Técnico em Marketing • Etec Extensão Ibiúna</div></div></header>
+<main class="wrap">
+<section class="panel">
+<h1 id="title">Crie sua senha</h1>
+<p class="muted" id="intro">Defina sua senha pessoal para acessar a Área do Grupo.</p>
+<div class="email" id="emailBox"></div>
+<form id="form">
+<label>Nova senha<input id="password" type="password" minlength="8" autocomplete="new-password" required></label>
+<label>Confirmar nova senha<input id="confirm" type="password" minlength="8" autocomplete="new-password" required></label>
+<button class="btn" id="saveBtn" type="submit">Salvar senha e acessar o grupo</button>
+</form>
+<div id="result" class="result"></div>
+</section>
+</main>
+<script>
+const SUPA='https://klkpkjkvwsojlovguhcf.supabase.co';
+const KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw';
+const AT='ptcc_student_access_token',RT='ptcc_student_refresh_token',$=id=>document.getElementById(id);
+const q=new URLSearchParams(location.search),tokenHash=q.get('token_hash')||'',type=q.get('type')||'',mode=q.get('mode')||'first',email=q.get('email')||'';
+function show(t,m){const e=$('result');e.className='result '+t;e.textContent=m}
+function disable(msg){$('saveBtn').disabled=true;show('err',msg)}
+$('emailBox').textContent=email?'Acesso para: '+email:'Link individual de acesso';
+if(mode==='recovery'){$('title').textContent='Defina uma nova senha';$('intro').textContent='Este acesso já possuía uma conta. Defina uma nova senha para continuar.'}
+if(!tokenHash||!['magiclink','recovery','invite','signup'].includes(type))disable('Este link de primeiro acesso é inválido ou está incompleto. Solicite ao professor um novo link de acesso.');
+
+$('form').onsubmit=async e=>{
+ e.preventDefault();
+ const p=$('password').value,c=$('confirm').value;
+ if(p.length<8)return show('err','Use uma senha com pelo menos 8 caracteres.');
+ if(p!==c)return show('err','As senhas informadas não coincidem.');
+ const b=$('saveBtn');b.disabled=true;show('info','Validando seu link e salvando a senha...');
+ try{
+   const vr=await fetch(SUPA+'/auth/v1/verify',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({token_hash:tokenHash,type})});
+   const v=await vr.json().catch(()=>({}));
+   if(!vr.ok)throw new Error(v.msg||v.message||v.error_description||'Este link é inválido, expirou ou já foi utilizado. Solicite ao professor um novo link.');
+   const access=v.access_token||v.session?.access_token||'',refresh=v.refresh_token||v.session?.refresh_token||'';
+   if(!access)throw new Error('Não foi possível iniciar sua sessão de primeiro acesso. Solicite um novo link ao professor.');
+   const ur=await fetch(SUPA+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+access,'Content-Type':'application/json'},body:JSON.stringify({password:p})});
+   const u=await ur.json().catch(()=>({}));
+   if(!ur.ok)throw new Error(u.msg||u.message||'Não foi possível salvar sua senha.');
+   localStorage.setItem(AT,access);if(refresh)localStorage.setItem(RT,refresh);
+   show('ok','Senha criada com sucesso. Abrindo a Área do Grupo...');
+   setTimeout(()=>location.replace('./grupo-v3.html'),800);
+ }catch(err){show('err',err.message||String(err));b.disabled=false}
+};
+</script>
+</body>
+</html>
