@@ -10,53 +10,80 @@
 <iframe id="core" src="./grupo-v3.html" title="Área do Grupo"></iframe>
 <script>
 const frame=document.getElementById('core');
-let installed=false,timer=null;
+let installed=false,timer=null,lastSignature='';
 function val(w,n,f){try{return w.eval(n)}catch{return f}}
 function dateBR(v){if(!v)return'—';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:v}
-function install(){
+function installLogic(w){
+  if(installed)return;
+  w.eval(`
+    window.ptccEffectiveStage=function(st,gs){
+      if(!gs||!gs.manual_override)return st;
+      return {...st,opens_on:gs.override_opens_on||st.opens_on,due_on:gs.override_due_on||st.due_on,manually_released:true};
+    };
+    isOpen=function(st){
+      const gs=GROUP_STAGES.find(x=>x.stage_id===st.id),e=window.ptccEffectiveStage(st,gs),t=todayISO();
+      if(e.due_on&&t>e.due_on)return false;
+      if(gs&&gs.manual_override){
+        if(gs.override_opens_on&&t<gs.override_opens_on)return false;
+        return true;
+      }
+      if(e.manually_released)return true;
+      if(e.release_mode==='PROFESSOR')return false;
+      if(e.release_mode==='DATE'&&e.opens_on&&t<e.opens_on)return false;
+      return true;
+    };
+    statusInfo=function(st,gs){
+      const s=gs?.status||'NOT_STARTED',e=window.ptccEffectiveStage(st,gs);
+      if(s==='APPROVED')return['Aprovada','good',false];
+      if(s==='IN_REVIEW')return['Em análise','info',false];
+      if(s==='CHANGES_REQUESTED')return['Ajustes solicitados','warn',isOpen(st)];
+      if(!isOpen(st)){
+        if(e.due_on&&todayISO()>e.due_on)return['Prazo encerrado','bad',false];
+        return['Ainda não iniciada','',false];
+      }
+      return['Aberta','good',true];
+    };
+  `);
+  installed=true;
+}
+async function syncOverrides(){
   try{
     const w=frame.contentWindow,d=frame.contentDocument;if(!w||!d)return;
-    if(!installed){
-      w.eval(`
-        window.ptccEffectiveStage=function(st,gs){
-          if(!gs||!gs.manual_override)return st;
-          return {...st,opens_on:gs.override_opens_on||st.opens_on,due_on:gs.override_due_on||st.due_on,manually_released:true};
-        };
-        isOpen=function(st){
-          const gs=GROUP_STAGES.find(x=>x.stage_id===st.id),e=window.ptccEffectiveStage(st,gs),t=todayISO();
-          if(e.due_on&&t>e.due_on)return false;
-          if(gs&&gs.manual_override){if(gs.override_opens_on&&t<gs.override_opens_on)return false;return true;}
-          if(e.manually_released)return true;
-          if(e.release_mode==='PROFESSOR')return false;
-          if(e.release_mode==='DATE'&&e.opens_on&&t<e.opens_on)return false;
-          return true;
-        };
-        statusInfo=function(st,gs){
-          const s=gs?.status||'NOT_STARTED',e=window.ptccEffectiveStage(st,gs);
-          if(s==='APPROVED')return['Aprovada','good',false];
-          if(s==='IN_REVIEW')return['Em análise','info',false];
-          if(s==='CHANGES_REQUESTED')return['Ajustes solicitados','warn',isOpen(st)];
-          if(!isOpen(st)){if(e.due_on&&todayISO()>e.due_on)return['Prazo encerrado','bad',false];return['Ainda não iniciada','',false];}
-          return['Aberta','good',true];
-        };
-      `);
-      try{w.eval('renderStages()')}catch{}
-      installed=true;
+    installLogic(w);
+    const group=val(w,'GROUP',null),token=val(w,'token',''),SUPA=val(w,'SUPA',''),KEY=val(w,'KEY','');
+    if(!group?.id||!token||!SUPA||!KEY)return;
+    const r=await fetch(SUPA+'/rest/v1/ptcc_v2_group_stages?group_id=eq.'+encodeURIComponent(group.id)+'&select=*',{headers:{apikey:KEY,Authorization:'Bearer '+token}});
+    if(!r.ok)return;
+    const rows=await r.json();
+    const sig=JSON.stringify(rows.map(x=>[x.stage_id,x.status,x.manual_override,x.override_opens_on,x.override_due_on]));
+    if(sig!==lastSignature){
+      lastSignature=sig;
+      w.eval('GROUP_STAGES='+JSON.stringify(rows));
+      w.eval('renderStages()');
     }
-    const stages=val(w,'STAGES',[]),gsAll=val(w,'GROUP_STAGES',[]),cards=[...d.querySelectorAll('#stages .stage')];
-    cards.forEach((card,i)=>{
-      const st=stages[i];if(!st)return;const gs=gsAll.find(x=>x.stage_id===st.id),manual=!!gs?.manual_override;
-      const opens=manual?(gs.override_opens_on||st.opens_on):st.opens_on,due=manual?(gs.override_due_on||st.due_on):st.due_on;
-      const dates=card.querySelector('.dates');if(dates)dates.innerHTML=`<span><b>Abertura:</b> ${dateBR(opens)}</span><span><b>Prazo:</b> ${dateBR(due)}</span>`;
-      let note=card.querySelector('.ptcc-group-override-note');
-      if(manual){
-        if(!note){note=d.createElement('div');note.className='notice ptcc-group-override-note';card.insertBefore(note,card.querySelector('.delivery')||null)}
-        note.innerHTML='<b>Cronograma especial deste grupo.</b> Esta etapa possui liberação/data definida especificamente pelo professor para o seu grupo.';
-      }else if(note)note.remove();
-    });
+    decorate(w,d);
   }catch{}
 }
-frame.addEventListener('load',()=>{installed=false;clearInterval(timer);setTimeout(install,250);timer=setInterval(install,900)});
+function decorate(w,d){
+  const stages=val(w,'STAGES',[]),gsAll=val(w,'GROUP_STAGES',[]),cards=[...d.querySelectorAll('#stages .stage')];
+  cards.forEach((card,i)=>{
+    const st=stages[i];if(!st)return;
+    const gs=gsAll.find(x=>x.stage_id===st.id),manual=!!gs?.manual_override;
+    const opens=manual?(gs.override_opens_on||st.opens_on):st.opens_on,due=manual?(gs.override_due_on||st.due_on):st.due_on;
+    const dates=card.querySelector('.dates');
+    if(dates)dates.innerHTML=`<span><b>Abertura:</b> ${dateBR(opens)}</span><span><b>Prazo:</b> ${dateBR(due)}</span>`;
+    let note=card.querySelector('.ptcc-group-override-note');
+    if(manual){
+      if(!note){note=d.createElement('div');note.className='notice ptcc-group-override-note';card.insertBefore(note,card.querySelector('.delivery')||null)}
+      note.innerHTML=`<b>Etapa liberada especificamente para este grupo.</b><br>Abertura: ${dateBR(opens)} • Prazo: ${dateBR(due)}<br><span class="small">O cronograma geral dos demais grupos não foi alterado.</span>`;
+    }else if(note)note.remove();
+  });
+}
+frame.addEventListener('load',()=>{
+  installed=false;lastSignature='';clearInterval(timer);
+  setTimeout(syncOverrides,300);
+  timer=setInterval(syncOverrides,1200);
+});
 </script>
 </body>
 </html>
