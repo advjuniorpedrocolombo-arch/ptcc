@@ -35,7 +35,6 @@ function disable(msg){$('saveBtn').disabled=true;show('err',msg)}
 $('emailBox').textContent=email?'Acesso para: '+email:'Link individual de acesso';
 if(mode==='recovery'){$('title').textContent='Defina uma nova senha';$('intro').textContent='Este acesso já possuía uma conta. Defina uma nova senha para continuar.'}
 if(!tokenHash||!['magiclink','recovery','invite','signup'].includes(type))disable('Este link de primeiro acesso é inválido ou está incompleto. Solicite ao professor um novo link de acesso.');
-
 $('form').onsubmit=async e=>{
  e.preventDefault();
  const p=$('password').value,c=$('confirm').value;
@@ -53,7 +52,7 @@ $('form').onsubmit=async e=>{
    if(!ur.ok)throw new Error(u.msg||u.message||'Não foi possível salvar sua senha.');
    localStorage.setItem(AT,access);if(refresh)localStorage.setItem(RT,refresh);
    show('ok','Senha criada com sucesso. Abrindo a Área do Grupo...');
-   setTimeout(()=>location.replace('./grupo-v3.html'),800);
+   setTimeout(()=>location.replace('./grupo-v4.html'),800);
  }catch(err){show('err',err.message||String(err));b.disabled=false}
 };
 </script>
