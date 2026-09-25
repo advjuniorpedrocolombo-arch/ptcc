@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTCC — Redefinir senha do professor</title>
+<style>
+:root{--navy:#07364a;--line:#d8e2e6;--bg:#f3f6f7;--muted:#687b84;--ok:#24744f;--bad:#96372f;--info:#2a6380}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 Segoe UI,Arial,sans-serif;background:var(--bg);color:#17313d}.wrap{width:min(480px,calc(100% - 28px));margin:45px auto}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 9px 24px rgba(7,54,74,.07)}h2{margin-top:0;color:var(--navy)}.sub{color:var(--muted)}label{font-weight:800;font-size:.78rem;display:block;margin-top:10px}input{width:100%;margin-top:5px;padding:10px;border:1px solid #cbd9df;border-radius:9px;background:#fff;font:inherit}.btn{border:0;border-radius:9px;padding:10px 12px;background:var(--navy);color:#fff;font-weight:850;cursor:pointer;text-decoration:none;display:inline-block;width:100%;margin-top:14px}.btn:disabled{opacity:.45;cursor:not-allowed}.result{display:none;margin-top:12px;padding:11px;border-radius:9px}.result.ok{display:block;background:#e9f6ef;color:#205b40}.result.err{display:block;background:#fff0ef;color:#8b3129}.result.info{display:block;background:#eaf3f7;color:#285a70}.back{display:block;text-align:center;margin-top:14px;color:var(--navy);font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap"><section class="panel"><h2>Redefinir senha</h2><p class="sub">Cadastre uma nova senha para o acesso do professor ao PTCC.</p><form id="form"><label>Nova senha<input id="password" type="password" minlength="8" autocomplete="new-password" required></label><label>Confirmar nova senha<input id="confirm" type="password" minlength="8" autocomplete="new-password" required></label><button class="btn" id="saveBtn" type="submit">Salvar nova senha</button></form><div id="result" class="result"></div><a class="back" href="./painel-professor-v6.html">Voltar ao painel</a></section></div>
+<script>
+const SUPA='https://klkpkjkvwsojlovguhcf.supabase.co';
+const KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw';
+const $=id=>document.getElementById(id);
+function show(type,msg){const el=$('result');el.className='result '+type;el.textContent=msg}
+function authData(){const hash=new URLSearchParams(location.hash.replace(/^#/,''));const query=new URLSearchParams(location.search);return{access_token:hash.get('access_token')||query.get('access_token')||'',refresh_token:hash.get('refresh_token')||query.get('refresh_token')||'',type:hash.get('type')||query.get('type')||'',error:hash.get('error_description')||query.get('error_description')||''}}
+const recovery=authData();
+if(recovery.error){show('err',decodeURIComponent(recovery.error.replace(/\+/g,' ')));$('saveBtn').disabled=true}
+else if(!recovery.access_token){show('err','Este link de recuperação é inválido ou expirou. Solicite um novo link no Painel do Professor.');$('saveBtn').disabled=true}
+else{show('info','Link validado. Informe sua nova senha.')}
+$('form').onsubmit=async e=>{e.preventDefault();const pass=$('password').value,confirm=$('confirm').value;if(pass.length<8)return show('err','A senha deve ter pelo menos 8 caracteres.');if(pass!==confirm)return show('err','As senhas informadas não coincidem.');const btn=$('saveBtn');btn.disabled=true;show('info','Salvando nova senha...');try{const r=await fetch(SUPA+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+recovery.access_token,'Content-Type':'application/json'},body:JSON.stringify({password:pass})});let data={};try{data=await r.json()}catch{}if(!r.ok)throw new Error(data.msg||data.message||'Não foi possível alterar a senha. Solicite um novo link.');show('ok','Senha alterada com sucesso. Você já pode voltar ao Painel do Professor e entrar com a nova senha.');$('form').reset();setTimeout(()=>location.href='./painel-professor-v6.html',2200)}catch(err){show('err',err.message);btn.disabled=false}};
+</script>
+</body>
+</html>
