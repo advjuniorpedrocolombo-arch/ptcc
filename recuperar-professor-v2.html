@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTCC — Recuperar senha do professor</title>
+<style>
+:root{--navy:#07364a;--bg:#f3f6f7;--line:#d8e2e6;--muted:#687b84;--ok:#24744f;--bad:#96372f;--info:#285a70}*{box-sizing:border-box}body{margin:0;font:15px/1.5 Arial,sans-serif;background:var(--bg);color:#17313d}.wrap{width:min(460px,calc(100% - 28px));margin:60px auto}.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 9px 24px rgba(7,54,74,.08)}h1{font-size:1.35rem;color:var(--navy);margin-top:0}.sub{color:var(--muted)}label{display:block;font-weight:700;margin-top:12px}input{width:100%;margin-top:5px;padding:11px;border:1px solid #cbd9df;border-radius:9px;font:inherit}.btn{width:100%;border:0;border-radius:9px;padding:11px 13px;background:var(--navy);color:#fff;font-weight:800;cursor:pointer;margin-top:14px}.btn:disabled{opacity:.55;cursor:not-allowed}.link{display:block;text-align:center;margin-top:14px;color:var(--navy)}.msg{display:none;margin-top:12px;padding:11px;border-radius:9px}.msg.ok{display:block;background:#e9f6ef;color:var(--ok)}.msg.err{display:block;background:#fff0ef;color:var(--bad)}.msg.info{display:block;background:#eaf3f7;color:var(--info)}.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="panel">
+<h1>Recuperar senha do professor</h1>
+<p class="sub">Recuperação exclusiva da conta administrativa do PTCC.</p>
+<div id="requestBox">
+<label>E-mail<input id="email" type="email" value="juniorpedrocolombo@gmail.com" readonly></label>
+<button class="btn" id="sendBtn" type="button">Enviar link de redefinição</button>
+</div>
+<div id="updateBox" class="hidden">
+<p class="sub">Defina sua nova senha administrativa.</p>
+<label>Nova senha<input id="pass1" type="password" minlength="8"></label>
+<label>Confirmar nova senha<input id="pass2" type="password" minlength="8"></label>
+<button class="btn" id="saveBtn" type="button">Salvar nova senha</button>
+</div>
+<div id="msg" class="msg"></div>
+<a class="link" href="./painel-professor-v2.html">Voltar ao Painel do Professor</a>
+</div></div>
+<script>
+const SUPA='https://klkpkjkvwsojlovguhcf.supabase.co';
+const KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw';
+const EMAIL='juniorpedrocolombo@gmail.com';
+const $=id=>document.getElementById(id);
+function show(type,text){const e=$('msg');e.className='msg '+type;e.textContent=text}
+function recoveryToken(){const h=new URLSearchParams((location.hash||'').replace(/^#/,''));return h.get('access_token')||''}
+async function sendRecovery(){const b=$('sendBtn');b.disabled=true;show('info','Solicitando link de recuperação...');try{const redirectTo=new URL('./recuperar-professor-v2.html',location.href).href.split('#')[0];const r=await fetch(SUPA+'/auth/v1/recover',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email:EMAIL,redirect_to:redirectTo})});let j={};try{j=await r.json()}catch{}if(!r.ok){const m=j.msg||j.message||j.error_description||'Falha ao solicitar recuperação.';if(r.status===429)throw new Error('Limite temporário de envio atingido. Aguarde alguns minutos e tente novamente.');throw new Error(m)}show('ok','Solicitação aceita. Verifique sua caixa de entrada e o spam. Use somente o e-mail mais recente.')}catch(e){show('err',e.message||String(e))}finally{b.disabled=false}}
+async function savePassword(){const a=$('pass1').value,b=$('pass2').value,token=recoveryToken();if(!token)return show('err','Link de recuperação inválido ou expirado. Solicite outro link.');if(a.length<8)return show('err','Use pelo menos 8 caracteres.');if(a!==b)return show('err','As senhas não coincidem.');const btn=$('saveBtn');btn.disabled=true;show('info','Alterando senha...');try{const r=await fetch(SUPA+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({password:a})});let j={};try{j=await r.json()}catch{}if(!r.ok)throw new Error(j.msg||j.message||'Não foi possível alterar a senha.');show('ok','Senha alterada com sucesso. Você já pode voltar ao Painel do Professor.');setTimeout(()=>location.href='./painel-professor-v2.html',1800)}catch(e){show('err',e.message||String(e))}finally{btn.disabled=false}}
+$('sendBtn').addEventListener('click',sendRecovery);
+$('saveBtn').addEventListener('click',savePassword);
+const token=recoveryToken();const hash=new URLSearchParams((location.hash||'').replace(/^#/,''));if(token&&hash.get('type')==='recovery'){$('requestBox').classList.add('hidden');$('updateBox').classList.remove('hidden');show('ok','Link reconhecido. Defina sua nova senha abaixo.')}else if(location.hash.includes('error=')){show('err',(hash.get('error_description')||'Link inválido ou expirado.').replace(/\+/g,' '))}
+</script>
+</body>
+</html>
