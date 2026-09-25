@@ -12,30 +12,31 @@
 <body>
 <div class="wrap"><div class="panel">
 <h1>Recuperar senha do professor</h1>
-<p class="sub">Use a conta de professor já cadastrada. Não crie outra conta.</p>
+<p class="sub">Use a conta administrativa do PTCC. Esta recuperação é exclusiva do professor.</p>
 <div id="requestBox">
-<label>E-mail<input id="email" type="email" value="juniorpedrocolombo@gmail.com" autocomplete="email"></label>
+<label>E-mail<input id="email" type="email" value="juniorpedrocolombo@gmail.com" readonly autocomplete="email"></label>
 <button class="btn" id="sendBtn">Enviar link de redefinição</button>
 </div>
 <div id="updateBox" class="hidden">
-<p class="sub">Defina sua nova senha.</p>
+<p class="sub">Defina sua nova senha administrativa.</p>
 <label>Nova senha<input id="pass1" type="password" minlength="8" autocomplete="new-password"></label>
 <label>Confirmar nova senha<input id="pass2" type="password" minlength="8" autocomplete="new-password"></label>
 <button class="btn" id="saveBtn">Salvar nova senha</button>
 </div>
 <div id="msg" class="msg"></div>
-<a class="link" href="./professor.html">Voltar ao Painel do Professor</a>
+<a class="link" href="./painel-professor-v2.html">Voltar ao Painel do Professor</a>
 </div></div>
 <script>
 const URL='https://klkpkjkvwsojlovguhcf.supabase.co';
 const KEY='sb_publishable_18SoR1Y51JG0him_HZvoBA_6ojb5DRw';
+const ADMIN_EMAIL='juniorpedrocolombo@gmail.com';
 const sb=supabase.createClient(URL,KEY);
 const $=id=>document.getElementById(id);
 function msg(ok,text){const e=$('msg');e.className='msg '+(ok?'ok':'err');e.textContent=text}
-$('sendBtn').onclick=async()=>{const email=$('email').value.trim();if(!email)return msg(false,'Informe o e-mail.');const redirectTo=new URL('./recuperar-professor.html',location.href).href;const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});if(error)return msg(false,error.message);msg(true,'Link enviado. Abra o e-mail recebido e clique em redefinir senha.')};
-async function recoveryMode(){const hash=location.hash||'';const qs=new URLSearchParams(location.search);const hasRecovery=hash.includes('type=recovery')||qs.get('code');const {data}=await sb.auth.getSession();if(hasRecovery||data.session){$('requestBox').classList.add('hidden');$('updateBox').classList.remove('hidden');msg(true,'Link reconhecido. Defina uma nova senha abaixo.')}}
-$('saveBtn').onclick=async()=>{const a=$('pass1').value,b=$('pass2').value;if(a.length<8)return msg(false,'Use pelo menos 8 caracteres.');if(a!==b)return msg(false,'As senhas não coincidem.');const {error}=await sb.auth.updateUser({password:a});if(error)return msg(false,error.message);msg(true,'Senha alterada com sucesso. Agora volte ao Painel do Professor e entre com a nova senha.');setTimeout(()=>{location.href='./professor.html'},1800)};
-sb.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY'){$('requestBox').classList.add('hidden');$('updateBox').classList.remove('hidden');msg(true,'Defina sua nova senha.')}});
+$('sendBtn').onclick=async()=>{const email=$('email').value.trim().toLowerCase();if(email!==ADMIN_EMAIL)return msg(false,'Use a conta administrativa cadastrada.');const redirectTo=new URL('./recuperar-professor.html',location.href).href;const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});if(error){if(/rate|security purposes|seconds/i.test(error.message||''))return msg(false,'Aguarde cerca de 1 minuto antes de solicitar outro link.');return msg(false,error.message)}msg(true,'Link enviado. Use apenas o e-mail mais recente e abra o link assim que recebê-lo.')};
+async function recoveryMode(){const hash=location.hash||'';const qs=new URLSearchParams(location.search);const hasRecovery=hash.includes('type=recovery')||qs.get('code');const {data}=await sb.auth.getSession();if(hasRecovery||data.session){$('requestBox').classList.add('hidden');$('updateBox').classList.remove('hidden');msg(true,'Link reconhecido. Defina uma nova senha administrativa abaixo.')}}
+$('saveBtn').onclick=async()=>{const a=$('pass1').value,b=$('pass2').value;if(a.length<8)return msg(false,'Use pelo menos 8 caracteres.');if(a!==b)return msg(false,'As senhas não coincidem.');const {error}=await sb.auth.updateUser({password:a});if(error)return msg(false,error.message);msg(true,'Senha administrativa alterada. Redirecionando para o Painel do Professor...');setTimeout(()=>{location.href='./painel-professor-v2.html'},1800)};
+sb.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY'){$('requestBox').classList.add('hidden');$('updateBox').classList.remove('hidden');msg(true,'Defina sua nova senha administrativa.')}});
 recoveryMode();
 </script>
 </body>
