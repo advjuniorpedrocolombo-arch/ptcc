@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTCC — Painel do Professor</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f6f7}iframe{border:0;width:100%;height:100%;display:block}</style>
+</head>
+<body>
+<iframe id="panel" src="./painel-professor-v6.html" title="Painel do Professor"></iframe>
+<script>
+const outer=document.getElementById('panel');
+let timer=null;
+function vars(w,n,f=[]){try{return w.eval(n)}catch{return f}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function safeArchiveGroup(w,g){
+  const MEM=vars(w,'MEM',[]),GS=vars(w,'GS',[]),SUB=vars(w,'SUB',[]),REQ=vars(w,'REQ',[]),AUDIT=vars(w,'AUDIT',[]),ARCHIVES=vars(w,'ARCHIVES',[]),ACCESS=vars(w,'ACCESS',[]);
+  const members=MEM.filter(x=>x.group_id===g.id),stages=GS.filter(x=>x.group_id===g.id),submissions=SUB.filter(x=>x.group_id===g.id),requests=REQ.filter(x=>x.group_id===g.id),audit=AUDIT.filter(x=>x.group_id===g.id),archives=ARCHIVES.filter(x=>x.group_id===g.id),access=ACCESS.filter(x=>x.group_id===g.id);
+  const summary=`Grupo: ${g.code} — ${g.name}\nIntegrantes: ${members.length}\nEtapas vinculadas: ${stages.length}\nEntregas: ${submissions.length}`;
+  if(!confirm('EXCLUSÃO SEGURA DO GRUPO\n\n'+summary+'\n\nO grupo será retirado da lista ativa, mas seus dados serão preservados para recuperação. Deseja continuar?'))return;
+  const typed=prompt('Para confirmar, digite exatamente o código do grupo:\n\n'+g.code,'');
+  if(typed===null)return;
+  if(typed.trim()!==g.code){alert('Código incorreto. A exclusão foi cancelada.');return}
+  try{
+    w.show?.('groupActionResult','info','Criando snapshot de segurança...');
+    const user=await w.user?.().catch(()=>null);
+    const snapshot={group:g,members,group_stages:stages,submissions,requests,audit,archives,access,saved_at:new Date().toISOString(),mode:'SAFE_ARCHIVE'};
+    await w.api('ptcc_v2_deleted_groups','POST',{deleted_group_id:g.id,code:g.code,name:g.name,theme:g.theme||null,snapshot,deleted_by:user?.id||null,deleted_by_email:user?.email||null});
+    w.show?.('groupActionResult','info','Snapshot salvo. Retirando o grupo da lista ativa...');
+    await w.api('ptcc_v2_groups?id=eq.'+encodeURIComponent(g.id),'PATCH',{status:'ARCHIVED'});
+    try{w.eval("GR=GR.filter(x=>x.id!=="+JSON.stringify(g.id)+");openGroup=null;renderGroups();renderReports();")}catch{}
+    w.show?.('groupActionResult','ok','Grupo <b>'+esc(g.code)+' — '+esc(g.name)+'</b> retirado da lista ativa com segurança. Os dados foram preservados para eventual recuperação.');
+  }catch(e){
+    w.show?.('groupActionResult','err','A operação foi interrompida: '+esc(e.message)+'. Nenhuma remoção física foi executada.');
+  }
+}
+function filterArchived(w){try{w.eval("if(Array.isArray(GR)&&GR.some(g=>g.status==='ARCHIVED')){GR=GR.filter(g=>g.status!=='ARCHIVED');if(openGroup&&!GR.some(g=>g.id===openGroup))openGroup=null;renderGroups();renderReports();}")}catch{}}
+function patch(){
+  try{
+    const wrap=outer.contentDocument,inner=wrap?.getElementById('core');if(!inner)return;
+    const d=inner.contentDocument,w=inner.contentWindow;if(!d||!w)return;
+    filterArchived(w);
+    const openId=vars(w,'openGroup',null),g=vars(w,'GR',[]).find(x=>x.id===openId);
+    const row=d.querySelector('.details-row');if(!row||!g)return;
+    const toolbar=row.querySelector('.toolbar');if(!toolbar||toolbar.querySelector('.ptcc-safe-delete-group'))return;
+    const b=d.createElement('button');b.type='button';b.className='btn bad ptcc-safe-delete-group';b.textContent='🗑 Excluir grupo';b.title='Retirar o grupo da lista ativa preservando seus dados';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();safeArchiveGroup(w,g)};toolbar.appendChild(b);
+  }catch{}
+}
+outer.addEventListener('load',()=>{clearInterval(timer);timer=setInterval(patch,700);setTimeout(patch,300)});
+</script>
+</body>
+</html>
