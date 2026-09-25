@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTCC — Área do Grupo</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f3f6f7}iframe{border:0;width:100%;height:100%;display:block}</style>
+</head>
+<body>
+<iframe id="core" src="./grupo-v3.html" title="Área do Grupo"></iframe>
+<script>
+const frame=document.getElementById('core');
+let installed=false,timer=null;
+function val(w,n,f){try{return w.eval(n)}catch{return f}}
+function dateBR(v){if(!v)return'—';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:v}
+function install(){
+  try{
+    const w=frame.contentWindow,d=frame.contentDocument;if(!w||!d)return;
+    if(!installed){
+      w.eval(`
+        window.ptccEffectiveStage=function(st,gs){
+          if(!gs||!gs.manual_override)return st;
+          return {...st,opens_on:gs.override_opens_on||st.opens_on,due_on:gs.override_due_on||st.due_on,manually_released:true};
+        };
+        isOpen=function(st){
+          const gs=GROUP_STAGES.find(x=>x.stage_id===st.id),e=window.ptccEffectiveStage(st,gs),t=todayISO();
+          if(e.due_on&&t>e.due_on)return false;
+          if(gs&&gs.manual_override){if(gs.override_opens_on&&t<gs.override_opens_on)return false;return true;}
+          if(e.manually_released)return true;
+          if(e.release_mode==='PROFESSOR')return false;
+          if(e.release_mode==='DATE'&&e.opens_on&&t<e.opens_on)return false;
+          return true;
+        };
+        statusInfo=function(st,gs){
+          const s=gs?.status||'NOT_STARTED',e=window.ptccEffectiveStage(st,gs);
+          if(s==='APPROVED')return['Aprovada','good',false];
+          if(s==='IN_REVIEW')return['Em análise','info',false];
+          if(s==='CHANGES_REQUESTED')return['Ajustes solicitados','warn',isOpen(st)];
+          if(!isOpen(st)){if(e.due_on&&todayISO()>e.due_on)return['Prazo encerrado','bad',false];return['Ainda não iniciada','',false];}
+          return['Aberta','good',true];
+        };
+      `);
+      try{w.eval('renderStages()')}catch{}
+      installed=true;
+    }
+    const stages=val(w,'STAGES',[]),gsAll=val(w,'GROUP_STAGES',[]),cards=[...d.querySelectorAll('#stages .stage')];
+    cards.forEach((card,i)=>{
+      const st=stages[i];if(!st)return;const gs=gsAll.find(x=>x.stage_id===st.id),manual=!!gs?.manual_override;
+      const opens=manual?(gs.override_opens_on||st.opens_on):st.opens_on,due=manual?(gs.override_due_on||st.due_on):st.due_on;
+      const dates=card.querySelector('.dates');if(dates)dates.innerHTML=`<span><b>Abertura:</b> ${dateBR(opens)}</span><span><b>Prazo:</b> ${dateBR(due)}</span>`;
+      let note=card.querySelector('.ptcc-group-override-note');
+      if(manual){
+        if(!note){note=d.createElement('div');note.className='notice ptcc-group-override-note';card.insertBefore(note,card.querySelector('.delivery')||null)}
+        note.innerHTML='<b>Cronograma especial deste grupo.</b> Esta etapa possui liberação/data definida especificamente pelo professor para o seu grupo.';
+      }else if(note)note.remove();
+    });
+  }catch{}
+}
+frame.addEventListener('load',()=>{installed=false;clearInterval(timer);setTimeout(install,250);timer=setInterval(install,900)});
+</script>
+</body>
+</html>
