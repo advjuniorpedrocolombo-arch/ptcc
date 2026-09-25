@@ -33,7 +33,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function show(id,t,m){const e=$(id);e.className='result '+t;e.innerHTML=m}
 function store(a,r){token=a;localStorage.setItem(AT,a);if(r)localStorage.setItem(RT,r)}
 function clearSession(){token='';localStorage.removeItem(AT);localStorage.removeItem(RT)}
-function go(){location.replace('./grupo-v3.html')}
+function go(){location.replace('./grupo-v4.html')}
 function cleanUrl(){history.replaceState({},'',location.pathname+location.search)}
 function parseHash(){
   const p=new URLSearchParams(location.hash.replace(/^#/,'')),a=p.get('access_token'),r=p.get('refresh_token'),type=p.get('type'),err=p.get('error'),code=p.get('error_code'),desc=p.get('error_description');
