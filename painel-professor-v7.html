@@ -13,6 +13,8 @@ const outer=document.getElementById('panel');
 let timer=null;
 function vars(w,n,f=[]){try{return w.eval(n)}catch{return f}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
+function isoToday(){const d=new Date();return[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function dateBR(v){if(!v)return'—';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:v}
 async function safeArchiveGroup(w,g){
   const MEM=vars(w,'MEM',[]),GS=vars(w,'GS',[]),SUB=vars(w,'SUB',[]);
   const members=MEM.filter(x=>x.group_id===g.id),stages=GS.filter(x=>x.group_id===g.id),submissions=SUB.filter(x=>x.group_id===g.id);
@@ -27,9 +29,52 @@ async function safeArchiveGroup(w,g){
     await w.loadData?.();
     try{w.eval("GR=GR.filter(x=>x.status!=='ARCHIVED');openGroup=null;renderGroups();renderReports();")}catch{}
     w.show?.('groupActionResult','ok','Grupo <b>'+esc(g.code)+' — '+esc(g.name)+'</b> arquivado com segurança. Os dados foram preservados e os e-mails dos integrantes podem ser reutilizados em novo grupo.');
-  }catch(e){
-    w.show?.('groupActionResult','err','A operação foi interrompida: '+esc(e.message)+'. Nenhuma remoção física foi executada.');
-  }
+  }catch(e){w.show?.('groupActionResult','err','A operação foi interrompida: '+esc(e.message)+'. Nenhuma remoção física foi executada.')}
+}
+async function saveGroupStage(w,g,st,body,msg){
+  try{
+    w.show?.('groupActionResult','info','Salvando configuração exclusiva do grupo...');
+    await w.api('ptcc_v2_group_stages?group_id=eq.'+encodeURIComponent(g.id)+'&stage_id=eq.'+encodeURIComponent(st.id),'PATCH',body);
+    await w.loadData?.();
+    w.show?.('groupActionResult','ok',msg);
+    setTimeout(patch,80);
+  }catch(e){w.show?.('groupActionResult','err',w.esc?w.esc(e.message):esc(e.message))}
+}
+async function releaseNow(w,g,st,gs){
+  if(!confirm(`Liberar agora a etapa "${st.name}" somente para o grupo ${g.code}?\n\nO cronograma geral dos demais grupos não será alterado.`))return;
+  await saveGroupStage(w,g,st,{manual_override:true,override_opens_on:isoToday(),override_due_on:gs?.override_due_on||st.due_on||null},`Etapa <b>${esc(st.name)}</b> liberada exclusivamente para o grupo <b>${esc(g.code)}</b>.`)
+}
+async function defineDates(w,g,st,gs){
+  const openDefault=gs?.override_opens_on||st.opens_on||isoToday(),dueDefault=gs?.override_due_on||st.due_on||'';
+  const open=prompt(`Data de abertura exclusiva para ${g.code}\nEtapa: ${st.name}\n\nFormato: AAAA-MM-DD`,openDefault);if(open===null)return;
+  const due=prompt(`Data limite exclusiva para ${g.code}\nEtapa: ${st.name}\n\nFormato: AAAA-MM-DD`,dueDefault);if(due===null)return;
+  const rx=/^\d{4}-\d{2}-\d{2}$/;
+  if(!rx.test(open)||!rx.test(due))return alert('Informe as duas datas no formato AAAA-MM-DD.');
+  if(open>due)return alert('A data de abertura não pode ser posterior ao prazo final.');
+  if(!confirm(`Aplicar cronograma exclusivo ao grupo ${g.code}?\n\nAbertura: ${dateBR(open)}\nPrazo: ${dateBR(due)}\n\nOs demais grupos continuarão no cronograma geral.`))return;
+  await saveGroupStage(w,g,st,{manual_override:true,override_opens_on:open,override_due_on:due},`Datas exclusivas definidas para <b>${esc(g.code)}</b> na etapa <b>${esc(st.name)}</b>.`)
+}
+async function restoreGeneral(w,g,st){
+  if(!confirm(`Restaurar a etapa "${st.name}" do grupo ${g.code} ao cronograma geral?`))return;
+  await saveGroupStage(w,g,st,{manual_override:false,override_opens_on:null,override_due_on:null},`A etapa <b>${esc(st.name)}</b> do grupo <b>${esc(g.code)}</b> voltou ao cronograma geral.`)
+}
+function addGroupStageControls(w,d,g){
+  const ST=vars(w,'ST',[]),GS=vars(w,'GS',[]).filter(x=>x.group_id===g.id),cards=[...d.querySelectorAll('.details-row .stage-card')];
+  cards.forEach((card,i)=>{
+    const st=ST[i];if(!st||card.querySelector('.ptcc-group-schedule'))return;
+    const gs=GS.find(x=>x.stage_id===st.id),manual=!!gs?.manual_override;
+    const box=d.createElement('div');box.className='ptcc-group-schedule';box.style.cssText='margin-top:10px;padding-top:10px;border-top:1px solid #d8e2e6';
+    const info=d.createElement('div');info.className='small';info.style.marginBottom='7px';
+    info.innerHTML=manual
+      ?`<b style="color:#946400">Cronograma exclusivo deste grupo</b><br>Abertura: ${dateBR(gs.override_opens_on||st.opens_on)} • Prazo: ${dateBR(gs.override_due_on||st.due_on)}<br><span style="color:#687b84">Cronograma geral: ${dateBR(st.opens_on)} → ${dateBR(st.due_on)}</span>`
+      :`<span style="color:#687b84">Usando cronograma geral: ${dateBR(st.opens_on)} → ${dateBR(st.due_on)}</span>`;
+    const actions=d.createElement('div');actions.className='actions';
+    const now=d.createElement('button');now.type='button';now.className='btn good';now.textContent='Liberar agora';now.onclick=e=>{e.preventDefault();e.stopPropagation();releaseNow(w,g,st,gs)};
+    const dates=d.createElement('button');dates.type='button';dates.className='btn alt';dates.textContent='Definir datas deste grupo';dates.onclick=e=>{e.preventDefault();e.stopPropagation();defineDates(w,g,st,gs)};
+    actions.append(now,dates);
+    if(manual){const restore=d.createElement('button');restore.type='button';restore.className='btn warn';restore.textContent='Restaurar cronograma geral';restore.onclick=e=>{e.preventDefault();e.stopPropagation();restoreGeneral(w,g,st)};actions.appendChild(restore)}
+    box.append(info,actions);card.appendChild(box);
+  })
 }
 function filterArchived(w){try{w.eval("if(Array.isArray(GR)&&GR.some(g=>g.status==='ARCHIVED')){GR=GR.filter(g=>g.status!=='ARCHIVED');if(openGroup&&!GR.some(g=>g.id===openGroup))openGroup=null;renderGroups();renderReports();}")}catch{}}
 function patch(){
@@ -39,8 +84,11 @@ function patch(){
     filterArchived(w);
     const openId=vars(w,'openGroup',null),g=vars(w,'GR',[]).find(x=>x.id===openId);
     const row=d.querySelector('.details-row');if(!row||!g)return;
-    const toolbar=row.querySelector('.toolbar');if(!toolbar||toolbar.querySelector('.ptcc-safe-delete-group'))return;
-    const b=d.createElement('button');b.type='button';b.className='btn bad ptcc-safe-delete-group';b.textContent='🗑 Excluir grupo';b.title='Arquivar com segurança e liberar os e-mails dos integrantes';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();safeArchiveGroup(w,g)};toolbar.appendChild(b);
+    const toolbar=row.querySelector('.toolbar');
+    if(toolbar&&!toolbar.querySelector('.ptcc-safe-delete-group')){
+      const b=d.createElement('button');b.type='button';b.className='btn bad ptcc-safe-delete-group';b.textContent='🗑 Excluir grupo';b.title='Arquivar com segurança e liberar os e-mails dos integrantes';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();safeArchiveGroup(w,g)};toolbar.appendChild(b)
+    }
+    addGroupStageControls(w,d,g);
   }catch{}
 }
 outer.addEventListener('load',()=>{clearInterval(timer);timer=setInterval(patch,700);setTimeout(patch,300)});
