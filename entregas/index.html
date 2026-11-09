@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PTCC | Entrega de Atividades — Prof. Junior Colombo</title>
+<style>
+:root{--red:#ad2026;--dark:#76151b;--ink:#28363e;--muted:#65747c;--bg:#f5f6f8;--line:#dfe4e8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:16px/1.5 "Segoe UI",Arial,sans-serif;color:var(--ink)}
+header{background:#fff;border-bottom:4px solid var(--red);padding:16px 0}
+.wrap{width:min(850px,calc(100% - 32px));margin:auto}.brand{font-weight:800;color:var(--red)}
+main{padding:22px 0 45px}.card{background:white;border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 6px 20px #1328380d}
+h1{color:var(--dark);font-size:1.65rem;margin:0 0 8px}h2{font-size:1.1rem;color:var(--dark);margin:26px 0 10px}
+.sub{margin:0;color:var(--muted)}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.tag{border-radius:30px;background:#f8e9eb;color:var(--dark);padding:5px 11px;font-size:.84rem;font-weight:700}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;font-size:.9rem;font-weight:700}
+input,select{display:block;width:100%;font:inherit;padding:12px;border:1px solid #bfcbd2;border-radius:9px;margin-top:5px;background:white}
+.full{grid-column:1/-1}.notice{padding:14px;border-radius:10px;background:#fff5db;border:1px solid #f0d68b;color:#674e13;margin:18px 0}
+.help{font-size:.84rem;color:var(--muted);margin:5px 0}.upload{border:2px dashed #c5ced5;border-radius:12px;padding:20px;background:#fafbfc}
+button{border:0;border-radius:9px;padding:13px 20px;font:inherit;font-weight:800;color:#fff;background:var(--red);margin-top:16px}
+button:disabled{background:#9aa5ac;cursor:not-allowed}
+footer{font-size:.82rem;color:var(--muted);text-align:center;padding-top:20px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.card{padding:18px}}
+</style>
+</head><body>
+<header><div class="wrap brand">Prof. Junior Colombo <span style="color:#65747c;font-weight:500">| Portal acadêmico</span></div></header>
+<main class="wrap"><section class="card">
+<h1>PTCC — Envio de Atividades</h1>
+<p class="sub">Planejamento do Trabalho de Conclusão de Curso • Técnico em Marketing • Etec de Mairinque — Extensão Ibiúna</p>
+<div class="meta"><span class="tag">Entrega por grupo</span><span class="tag">Comprovante por protocolo</span></div>
+<div class="notice"><strong>Página em implantação.</strong> O envio de arquivos ainda não está habilitado. Não utilize esta página para entregar trabalhos até a liberação pelo professor.</div>
+<form id="form" onsubmit="event.preventDefault()">
+<h2>Identificação da equipe</h2>
+<div class="grid">
+<label>Nome do grupo<input name="grupo" placeholder="Nome oficial da equipe" autocomplete="organization" required disabled></label>
+<label>Atividade<select name="atividade" required disabled><option>Atividades serão publicadas pelo professor</option></select></label>
+<label>Aluno responsável pelo envio<input name="aluno" placeholder="Nome completo" required disabled></label>
+<label>E-mail para o comprovante<input name="email" type="email" placeholder="nome@exemplo.com" required disabled></label>
+</div>
+<h2>Arquivo da atividade</h2>
+<div class="upload"><label>Selecionar arquivo (PDF ou DOCX)<input name="arquivo" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled></label><p class="help">Os formatos e limites serão confirmados na ativação.</p></div>
+<button type="submit" disabled>Enviar atividade e gerar protocolo</button>
+</form></section><footer>Prof. Junior P. Colombo • PTCC • Ambiente de atividades acadêmicas</footer></main>
+</body></html>
